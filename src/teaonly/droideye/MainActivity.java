@@ -1,49 +1,20 @@
 package teaonly.droideye;
-import teaonly.droideye.*;
-
 import java.io.IOException;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.io.InputStream;
-import java.io.ByteArrayInputStream;
-import java.lang.System;
-import java.lang.Thread;
 import java.util.*;
 import java.net.*;
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import  org.apache.http.conn.util.InetAddressUtils;
 
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.AlertDialog.Builder;
-import android.app.ProgressDialog;
-import android.content.res.Resources;
-import android.content.res.AssetManager;
-import android.content.res.AssetFileDescriptor;
+import android.content.Intent;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
-import android.hardware.Camera.PictureCallback;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Bitmap.CompressFormat;
-import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
-import android.graphics.Paint;
 import android.graphics.YuvImage;
-import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
-import android.os.Handler;
-import android.os.Looper;
-import android.media.AudioFormat;
-import android.media.MediaRecorder;
-import android.media.AudioRecord;
-import android.text.format.Formatter;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.MotionEvent;
@@ -51,18 +22,16 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.SurfaceView;
 import android.util.Log;
-import android.widget.LinearLayout; 
-import android.widget.ImageButton;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.google.ads.*;
 
 public class MainActivity extends Activity 
     implements View.OnTouchListener, CameraView.CameraReadyCallback, OverlayView.UpdateDoneCallback{
     private static final String TAG = "TEAONLY";
 
-    private AdView adView;
+	private int PORT =  55555;
+	private String SERVER_IP;
 
     boolean inProcessing = false;
     final int maxVideoNumber = 3;
@@ -76,9 +45,6 @@ public class MainActivity extends Activity
     private TextView tvMessage1;
     private TextView tvMessage2;
 
-    private AudioRecord audioCapture = null;
-    private StreamingLoop audioLoop = null;
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -90,12 +56,6 @@ public class MainActivity extends Activity
 
         setContentView(R.layout.main);
 
-        //setup adView
-        LinearLayout layout = (LinearLayout)findViewById(R.id.layout_setup);
-        adView = new AdView(this, AdSize.BANNER, "a1507f940fc****");
-        layout.addView(adView);
-        adView.loadAd(new AdRequest());
-
         btnExit = (Button)findViewById(R.id.btn_exit);
         btnExit.setOnClickListener(exitAction);
         tvMessage1 = (TextView)findViewById(R.id.tv_message1);
@@ -104,11 +64,6 @@ public class MainActivity extends Activity
         for(int i = 0; i < maxVideoNumber; i++) {
             videoFrames[i] = new VideoFrame(1024*1024*2);        
         }    
-
-        System.loadLibrary("mp3encoder");
-        System.loadLibrary("natpmp");
-
-        initAudio();
         initCamera();
     }
     
@@ -149,47 +104,60 @@ public class MainActivity extends Activity
         if ( webServer != null)
             webServer.stop();
         cameraView_.StopPreview(); 
-        //cameraView_.Release();
-        audioLoop.ReleaseLoop();
-        audioCapture.release();
-    
-        //System.exit(0);
-        finish();
+
     }  
-    
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-    }
+
+//    @Override
+//    public void onBackPressed() {
+//       super.onBackPressed();
+//    }
 
     @Override 
     public boolean onTouch(View v, MotionEvent evt) { 
-        
-
         return false;
     }
-  
-    private void initAudio() {
-        int minBufferSize = AudioRecord.getMinBufferSize(44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-        int minTargetSize = 4410 * 2;      // 0.1 seconds buffer size
-        if (minTargetSize < minBufferSize) {
-            minTargetSize = minBufferSize;
-        }
-        if (audioCapture == null) {
-            audioCapture = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                                        44100,
-                                        AudioFormat.CHANNEL_IN_MONO,
-                                        AudioFormat.ENCODING_PCM_16BIT,
-                                        minTargetSize);
-        }
+    
+    /* QR-Code stuff */
+	public void readQRCode(View view) {
 
-        if ( audioLoop == null) {  
-            Random rnd = new Random();
-            String etag = Integer.toHexString( rnd.nextInt() );
-            audioLoop = new StreamingLoop("teaonly.droideye" + etag );
-        }
-
-    }
+		Log.d("DEBUG", "Open BARCODE Intent");
+		
+		try {
+			Intent intent = new Intent("com.google.zxing.client.android.SCAN");
+			intent.putExtra("SCAN_MODE", "QR_CODE_MODE"); // Set zxing reader to QR-mode
+			startActivityForResult(intent, 0); // requestCode 0
+		}
+		catch (Exception e) {
+			Uri marketUri = Uri.parse("market://details?=id=com.google.zxing.client.android");
+			Intent marketIntent = new Intent(Intent.ACTION_VIEW, marketUri);
+			startActivity(marketIntent);
+		}
+	}
+	
+	// Catch intent activity results (mainly QR-code reading)
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+		Log.d("QRCODE", requestCode + ", resultCode: " + resultCode);
+		if(requestCode == 0) {
+			if(resultCode == RESULT_OK) {
+				String qrCode = data.getStringExtra("SCAN_RESULT");
+				Log.d("OUTPUT", qrCode);
+				
+				TextView t = (TextView)findViewById(R.id.hello1);
+				t.setText(qrCode);
+				
+				// save ip to class variable
+				this.SERVER_IP = qrCode;
+				//send a 'hello world' -message to server
+				new Sender(SERVER_IP, PORT).execute("Hello world!");
+			}
+			
+			if(resultCode == RESULT_CANCELED) {
+				Log.d("DEBUG", "QR read cancelled");
+			}
+		}
+	}
 
     private void initCamera() {
         SurfaceView cameraSurface = (SurfaceView)findViewById(R.id.surface_camera);
@@ -202,22 +170,30 @@ public class MainActivity extends Activity
     }
     
     public String getLocalIpAddress() {
-        try {
-            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
-                NetworkInterface intf = en.nextElement();
-                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
-                    InetAddress inetAddress = enumIpAddr.nextElement();
-                    //if (!inetAddress.isLoopbackAddress() && !inetAddress.isLinkLocalAddress() && inetAddress.isSiteLocalAddress() ) {
-                    if (!inetAddress.isLoopbackAddress() && InetAddressUtils.isIPv4Address(inetAddress.getHostAddress()) ) {
-                        String ipAddr = inetAddress.getHostAddress();
-                        return ipAddr;
-                    }
-                }
-            }
-        } catch (SocketException ex) {
-            Log.d(TAG, ex.toString());
-        }
-        return null;
+    	//Get WLAN-IP (because we are only streamin to LAN)
+		String wlanIP =  Utils.getIPAddress(true, "wlan0");
+
+		// For now we'll just pass on the public IP if no LAN-ip is found.
+		if(wlanIP.equals("")) {
+	        try {
+	            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+	                NetworkInterface intf = en.nextElement();
+	                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
+	                    InetAddress inetAddress = enumIpAddr.nextElement();
+	                    if (!inetAddress.isLoopbackAddress() && InetAddressUtils.isIPv4Address(inetAddress.getHostAddress()) ) {
+	                        String ipAddr = inetAddress.getHostAddress();
+	                        return ipAddr;
+	                    }
+	                }
+	            }
+	        } catch (SocketException ex) {
+	            Log.d(TAG, ex.toString());
+	        }
+	        return null;
+		}
+		else {
+			return wlanIP;
+		}
     }   
 
     private boolean initWebServer() {
@@ -228,17 +204,13 @@ public class MainActivity extends Activity
                 webServer.registerCGI("/cgi/query", doQuery);
                 webServer.registerCGI("/cgi/setup", doSetup);
                 webServer.registerCGI("/stream/live.jpg", doCapture);
-                webServer.registerCGI("/stream/live.mp3", doBroadcast);
             }catch (IOException e){
                 webServer = null;
             }
         }
         if ( webServer != null) {
-            tvMessage1.setText( getString(R.string.msg_access_local) + " http://" + ipAddr  + ":8080" );
-            //tvMessage2.setText( getString(R.string.msg_access_query));
-            //tvMessage2.setVisibility(View.VISIBLE);
-            NatPMPClient natQuery = new NatPMPClient();
-            natQuery.start();  
+            tvMessage1.setText( getString(R.string.connect_to_pc));
+            //+ " http://" + ipAddr  + ":8080" 
             return true;
         } else {
             tvMessage1.setText( getString(R.string.msg_error) );
@@ -248,10 +220,12 @@ public class MainActivity extends Activity
           
     }
    
+    //Exit action?
     private OnClickListener exitAction = new OnClickListener() {
         @Override
         public void onClick(View v) {
             onPause();
+            finish();
         }   
     };
    
@@ -308,37 +282,6 @@ public class MainActivity extends Activity
         }    
     }; 
 
-    private TeaServer.CommonGatewayInterface doBroadcast = new TeaServer.CommonGatewayInterface() {
-        @Override
-        public String run(Properties parms) {
-            return null;
-        }   
-        
-        
-        @Override 
-        public InputStream streaming(Properties parms) {
-            if ( audioLoop.isConnected() ) {     
-                return null;                    // tell client is is busy by 503
-            }    
- 
-            audioLoop.InitLoop(128, 8192);
-            InputStream is = null;
-            try{
-                is = audioLoop.getInputStream();
-            } catch(IOException e) {
-                audioLoop.ReleaseLoop();
-                return null;
-            }
-            
-            audioCapture.startRecording();
-            AudioEncoder audioEncoder = new AudioEncoder();
-            audioEncoder.start();  
-            
-            return is;
-        }
-
-    };
-
     private TeaServer.CommonGatewayInterface doCapture = new TeaServer.CommonGatewayInterface () {
         @Override
         public String run(Properties parms) {
@@ -387,74 +330,5 @@ public class MainActivity extends Activity
         }
     }; 
 
-    static private native int nativeOpenEncoder();
-    static private native void nativeCloseEncoder();
-    static private native int nativeEncodingPCM(byte[] pcmdata, int length, byte[] mp3Data);    
-    private class AudioEncoder extends Thread {
-        byte[] audioPackage = new byte[1024*16];
-        byte[] mp3Data = new byte[1024*8];
-        int packageSize = 4410 * 2;
-        @Override
-        public void run() {
-            nativeOpenEncoder(); 
-            
-            OutputStream os = null;
-            try {
-                os = audioLoop.getOutputStream();
-            } catch(IOException e) {
-                os = null;
-                audioLoop.ReleaseLoop();
-                nativeCloseEncoder();
-                return;
-            }
-            
-            while(true) {
-
-                int ret = audioCapture.read(audioPackage, 0, packageSize);
-                if ( ret == AudioRecord.ERROR_INVALID_OPERATION ||
-                        ret == AudioRecord.ERROR_BAD_VALUE) {
-                    break; 
-                }
-
-                //TODO: call jni encoding PCM to mp3
-                ret = nativeEncodingPCM(audioPackage, ret, mp3Data);          
-                
-                try {
-                    os.write(mp3Data, 0, ret);
-                } catch(IOException e) {
-                    break;    
-                }
-            }
-            
-            audioLoop.ReleaseLoop();
-            nativeCloseEncoder();
-        }
-    }
-
-    
-    static private native String nativeQueryInternet();    
-    private class NatPMPClient extends Thread {
-        String queryResult;
-        Handler handleQueryResult = new Handler(getMainLooper());  
-        @Override
-        public void run(){
-            queryResult = nativeQueryInternet();
-            if ( queryResult.startsWith("error:") ) {
-                handleQueryResult.post( new Runnable() {
-                    @Override
-                    public void run() {
-                        tvMessage2.setText( getString(R.string.msg_access_query_error));                        
-                    }
-                });
-            } else {
-                handleQueryResult.post( new Runnable() {
-                    @Override
-                    public void run() {
-                        tvMessage2.setText( getString(R.string.msg_access_internet) + " " + queryResult );
-                    }
-                });
-            }
-        }    
-    }
 }    
 

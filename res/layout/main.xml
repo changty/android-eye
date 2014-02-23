@@ -51,6 +51,21 @@
                     android:gravity="center"
                     android:textColor="#FFFFFFFF"
                     android:textSize="24dip"/>
+
+                <TextView
+                    android:id="@+id/hello1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="TextView" />
+
+                <Button
+                    android:id="@+id/qrCode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:onClick="readQRCode"
+                    android:text="@string/read_qr_code"/>
+                                   
+
             </LinearLayout>
 
             <LinearLayout
