@@ -1,0 +1,41 @@
+/*Give all elements the border-box box-sizing*/
+*{
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+
+
+body {
+	margin:auto;
+	text-align:center;
+	margin:0;
+	padding:0;
+	background: #eee;
+
+	font-family: Arial, Verdana, Tahoma, Helvetica;
+	color: #222;
+	font-size: 1.2em;
+}
+
+.page {
+	overflow: hidden;
+	width:100%;
+	height:100%;
+	padding: 20px;
+}
+
+#qrcode {
+}
+
+p {
+	color: #666;
+}
+
+.hidden {
+	display: none;
+	opacity: 0;
+}
