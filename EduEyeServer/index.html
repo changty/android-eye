@@ -3,45 +3,48 @@
   <head>
     <title>EduEye - Desktop</title>
       <link type="text/css" rel="stylesheet" href="css/main.css" />
-	  <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
-	  <script src="res/jquery.waitforimages.js"></script>
-	  <script src="res/jquery.qrcode-0.7.0.min.js"></script>
+      <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+      <script src="res/jquery.waitforimages.js"></script>
+      <script src="res/jquery.qrcode-0.7.0.min.js"></script>
   </head>
 
 
 
   <body>
 
-  	<div id="qr" class="page">
-  		<canvas id="qrcode"></canvas>
-	    <p>Read the QR-code with your mobile device</p>
-  	</div>
+    <div id="exit">x</div>
 
-	<div id="camera" class="page hidden">
-        <ul data-role="listview" data-inset="true" >
-            <li>
-                <div class="live_image_box" id="video_plane">
-                    <img id="live_image" src="images/black.png">
-                </div>
-              <!--  <div>
-                    <div id="player" style="display:block;height:32px;"></div>   
-                </div>    -->
-            </li>
-            <li data-role="fieldcontain" class="center">
-                <div class="center">
-                    <span>Video size:</span>
-                    <select name="resolution-choice" id="resolution-choice" data-native-menu="false">
-                    </select>
-                    <input id="btn_play" type="button" value="Play Video"/>
-                </div>
-            </li>
-        </ul>
+    <!-- QR-Code view -->
+    <div id="qr" class="page">
+        <div id="item">
+            <canvas id="qrcode"></canvas>
+            <p>Read the QR-code with your mobile device</p>
+        </div>
+    </div>
+
+
+
+
+    <!-- Camera View -->
+    <div id="camera" class="page hidden">
+                
+        <div class="live_image_box" id="video_plane">
+            <img id="live_image" src="res/blank.png">
+        </div>
+
+        <div class="controls">
+            <span>Video size:</span>
+            <select name="resolution-choice" id="resolution-choice" data-native-menu="false">
+            </select>
+            <input id="btn_play" type="button" value="Play Video"/>
+        </div>
+
         <!-- for debug -->
         <div id="bottom_div">
             <span id="debug_msg">Connecting...</span>
         </div>
 
-	</div><!-- page -->
+    </div><!-- page -->
 
 </body>
 
@@ -56,11 +59,12 @@
 //////////////////////////////////////////////
 // Global variable define
 //////////////////////////////////////////////
-var planeWidth = 0;
-var planeHeight = 0;
+
 var basicURL = "";
 var inStreaming = false;
 var picCount = 0;
+var WWWPORT = 44451;
+var REFRESH_RATE = 300; //in ms
 
 function CameraSize () {
     this.width = 0;
@@ -73,31 +77,24 @@ var currentSize = new CameraSize();
 // Global function define
 //////////////////////////////////////////////
 var onImageLoadOK = function() {
-    var wid = 0;
-    var hei = 0;
-    if ( planeHeight * currentSize.width / currentSize.height > planeWidth) {
-        wid = planeWidth;
-        hei = math.round(planeWidth * currentSize.height / currentSize.width); 
-    } else {
-        hei = planeHeight;
-        wid = planeHeight * currentSize.width / currentSize.height;  
-    }
+
+    var wid = $(window).width(); 
+    var hei = $(window).height();
+
     $("#live_image").width(wid);
     $("#live_image").height(hei);
 
     if ( inStreaming == true)
-        setTimeout(refreshLive, 300);  
+        setTimeout(refreshLive, REFRESH_RATE);  
 };
 
 var onImageLoadError = function() {
 };
 
 var onQueryDone = function (ret) {
-	$('#qr').addClass('hidden');
-	$('#camera').removeClass('hidden');
+    $('#qr').addClass('hidden');
+    $('#camera').removeClass('hidden');
     
-    console.log("In query done, just hid the QR code");
-
     $("#resolution-choice").empty();
     var resList = ret.split("|");
     currentSize.width = resList[0].split("x")[0];
@@ -122,8 +119,11 @@ var onQueryDone = function (ret) {
         }
     }
     $("#resolution-choice").bind("change", doChangeRes);  
-
     $("#debug_msg").html("Connected");
+
+    // Trigger resolution changes (setup)
+    // and start streaming
+    doChangeRes();
 };
 
 var onHttpError = function (err) {
@@ -154,6 +154,11 @@ var playClick = function () {
 var onSetupOK = function() {
     var targetIndex = $("#resolution-choice").val();
     currentSize = supportedSize[targetIndex]; 
+
+    // If not already playing, start!
+    if(!inStreaming) {
+        playClick();
+    }
 };
 
 var doChangeRes = function () {
@@ -174,12 +179,15 @@ var doChangeRes = function () {
  // QR-Code
 //////////////////////////////////////////////
   var qr = function(text) {
-  	console.log("Darwing QR-code ", text);
-  	var canvas = document.getElementById('qrcode');
-  	canvas.height = 350; 
-  	canvas.width = 350;
+    console.log("Darwing QR-code ", text);
+    var canvas = document.getElementById('qrcode');
+    canvas.height = 350; 
+    canvas.width = 350;
 
-  	$('#qrcode').qrcode({ecLevel:'H', size: 350, label: 'EduEye', fontcolor: '#3498db', fontname: 'Arial', mode: 2, text: text});
+    $('#qrcode').qrcode({ecLevel:'H', size: 350, label: 'EduEye', fontcolor: '#3498db', fontname: 'Arial', mode: 2, text: text});
+  
+        alignMiddle($('#item'));
+
   }
 
 
@@ -188,51 +196,51 @@ var doChangeRes = function () {
  // UDP-Server
 //////////////////////////////////////////////
 
-	var dgram = require('dgram');
-	var fs = require('fs');
+    var dgram = require('dgram');
+    var fs = require('fs');
 
-	var PORT = 55555;
+    var PORT = 55555;
 
-	var server = dgram.createSocket('udp4'); 
-	server.on('message', function (msg, rinfo) {
-		console.log('server got: ' + msg + ' from ' + rinfo.address + ':' + rinfo.port); 
-		
-		//Start showing images
-		basicURL = "http://" + rinfo.address + ':8080/'; 
-		console.log("basicURL ", basicURL );
+    var server = dgram.createSocket('udp4'); 
+    server.on('message', function (msg, rinfo) {
+        console.log('server got: ' + msg + ' from ' + rinfo.address + ':' + rinfo.port); 
+        
+        //Start showing images
+        basicURL = "http://" + rinfo.address + ':' + WWWPORT + '/'; 
+        console.log("basicURL ", basicURL );
 
-	    var screenHeight = $(window).height();
-	    var screenWidth = $(window).width();
-	    planeHeight = Math.round( screenHeight * 0.5);
-	    planeWidth = Math.round( screenWidth * 0.80);
+        var screenHeight = $(window).height();
+        var screenWidth = $(window).width();
+       // planeHeight = Math.round( screenHeight * 0.5);
+      //  planeWidth = Math.round( screenWidth * 0.80);
 
-	    $("#video_plane").height(planeHeight);
-	    $("#video_plane").width(planeWidth);
+        $("#video_plane").height(screenHeight);
+        $("#video_plane").width(screenWidth);
 
-	    $("#btn_play").bind("click", playClick);
-	    
-	    setTimeout(function() {
-		    $.ajax({
-		        type: "GET",
-		        url: basicURL + "cgi/query",
-		        cache: false,
-		        error: onHttpError,
-		        success: onQueryDone
-		    });
+        $("#btn_play").bind("click", playClick);
+        
+        setTimeout(function() {
+            $.ajax({
+                type: "GET",
+                url: basicURL + "cgi/query",
+                cache: false,
+                error: onHttpError,
+                success: onQueryDone
+            });
 
-	    }, 2000);
-
-
-
-	});
-
-	server.on('listening', function() {
-		var address = server.address(); 
-		console.log('Server listening ' + address.address + ':' + address.port);
-	});
+        }, 2000);
 
 
-	server.bind(PORT);
+
+    });
+
+    server.on('listening', function() {
+        var address = server.address(); 
+        console.log('Server listening ' + address.address + ':' + address.port);
+    });
+
+
+    server.bind(PORT);
 
 
 
@@ -241,41 +249,79 @@ var doChangeRes = function () {
  // Helper functions
 //////////////////////////////////////////////
 
-	function showQRCodeHideCamera() {
-		$('#camera').addClass('hidden');
-		$('#qr').removeClass('hidden');
-		getIPAddress(qr);
-	}
+    function showQRCodeHideCamera() {
+        $('#camera').addClass('hidden');
+        $('#qr').removeClass('hidden');
+        getIPAddress(qr);
+    }
 
 
-	function getIPAddress(callback) {
-		var os=require('os');
-		var ifaces=os.networkInterfaces();
-		for (var dev in ifaces) {
-		  var alias=0;
-		  ifaces[dev].forEach(function(details){
+    function getIPAddress(callback) {
+        var os=require('os');
+        var ifaces=os.networkInterfaces();
+        for (var dev in ifaces) {
+          var alias=0;
+          ifaces[dev].forEach(function(details){
 
-		    if (details.family=='IPv4' && dev !='lo' && details.internal != true) {
-		      console.log('Drawing IP: ' + dev+(alias?':'+alias:''),details.address + " " + details.internal);
-		      //++alias;
-		      callback(details.address);
-		     return;	
-		    }	
-		  });
-		}
-	
-		// TODO: If no IP-address is found, ask IP manually
+            if (details.family=='IPv4' && dev !='lo' && details.internal != true) {
+              console.log('Drawing IP: ' + dev+(alias?':'+alias:''),details.address + " " + details.internal);
+              //++alias;
+              callback(details.address);
+             return;    
+            }   
+          });
+        }
+    
+        // TODO: If no IP-address is found, ask IP manually
 
-	}
+    }
 
+    // For centering elements
+    // element = jQuery object
+    function alignMiddle(element) {
+       
+        var h = $(window).height(); 
+        var w = $(window).width();
+
+        var he = element.height();
+        var we = element.width();
+
+        var top = (h-he)/2; 
+        var left = (w-we)/2;
+
+        if(top < 0) {
+            top = 0;
+        }
+
+        if(left < 0) {
+            left = 0;
+        }
+
+        element.css({top:top + 'px', left: left + 'px'});
+
+    }
 
 //////////////////////////////////////////////
  // Getting stuff done after load
 //////////////////////////////////////////////
 
-	$(document).ready(function() {
-		getIPAddress(qr);
-	});
+    $(document).ready(function() {
+        //Load gui library
+        var gui = require('nw.gui'); 
+
+        //style dropdown
+
+        //Show local computer's ip and generate QR
+        getIPAddress(qr);
+
+
+        $('#exit').click(function() {
+            console.log("click");
+            var win = gui.Window.get(); 
+            win.close();
+        });
+
+    });
 
   </script>
 </html>
