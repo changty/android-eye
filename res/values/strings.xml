@@ -6,9 +6,10 @@
 
     <string name="msg_access_local">Open at local: </string>
     <string name="msg_access_internet">Open at internet:  </string>
-    <string name="msg_access_query">Detecting internet ... </string>
+    <string name="msg_access_query">Detecting internet </string>
     <string name="msg_access_query_error">Also you can setup your router to access from internet</string>
     <string name="msg_error">Error: Please enable wifi</string>
     <string name="read_qr_code">Read QR-Code</string>
     <string name="connect_to_pc">Connect to PC with QR-code</string>
+    <string name="connecting_to_wlan">Connecting to wlan</string>
 </resources>

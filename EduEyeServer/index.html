@@ -6,6 +6,7 @@
       <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
       <script src="res/jquery.waitforimages.js"></script>
       <script src="res/jquery.qrcode-0.7.0.min.js"></script>
+
   </head>
 
 
@@ -15,10 +16,18 @@
     <div id="exit">x</div>
 
     <!-- QR-Code view -->
-    <div id="qr" class="page">
+    <div id="qr" class="page ">
         <div id="item">
             <canvas id="qrcode"></canvas>
             <p>Read the QR-code with your mobile device</p>
+
+            <a href="#" id="showManualInput" class="small">Not working? Try manually</a>
+
+            <div class="clearfix"></div>
+            <div id="manualInput" class="hidden">
+                <input id="manualIP" class="txtfield txtfield-medium pull-left"  type="text" placeholder="Type in IP-address" />
+                <button id="generateQR"  class="pull-left  btn btn-2 btn-2c pull-left btn-small">Generate QR</button>
+            </div>
         </div>
     </div>
 
@@ -26,27 +35,46 @@
 
 
     <!-- Camera View -->
-    <div id="camera" class="page hidden">
-                
+    <div id="camera" class="page  hidden">
+              
+
         <div class="live_image_box" id="video_plane">
             <img id="live_image" src="res/blank.png">
         </div>
 
-        <div class="controls">
-            <span>Video size:</span>
-            <select name="resolution-choice" id="resolution-choice" data-native-menu="false">
-            </select>
-            <input id="btn_play" type="button" value="Play Video"/>
-        </div>
 
-        <!-- for debug -->
-        <div id="bottom_div">
-            <span id="debug_msg">Connecting...</span>
+        <canvas id="drawingArea"></canvas>
+
+        <div id="controls" class="controls">
+            <button id="showQR"  class="pull-left  btn btn-2 btn-2c"><</button>
+
+
+            <span class="custom-dropdown custom-dropdown--emerald custom-dropdown--large">
+                <select name="resolution-choice" id="resolution-choice" class="custom-dropdown__select custom-dropdown__select--emerald">
+                    <option>Testi</option>
+                    <option>Lorem</option>
+                </select>
+            </span>
+
+            <button id="btn_play"  class="btn btn-2 btn-2c">Play</button>
+
+            <button id="autoFocus" class="pull-right btn btn-2 btn-2c"/>AF</button>
+            <button id="zoomOut" class="pull-right btn btn-2 btn-2c"/>-</button>
+            <button id="zoomIn" class="pull-right btn btn-2 btn-2c" />+</button>
+
+
+            <button id="clearCanvas" class="pull-right btn btn-green" />Clear</button>
+            <button id="eraser" class="pull-right btn btn-green" />Eraser</button>
+            <button id="highlighter" class="pull-right btn btn-green" />Highlighter</button>
+
+
+
         </div>
 
     </div><!-- page -->
 
 </body>
+      <script src="res/paint.js"></script>
 
   <script>
 
@@ -65,6 +93,8 @@ var inStreaming = false;
 var picCount = 0;
 var WWWPORT = 44451;
 var REFRESH_RATE = 300; //in ms
+var maxZoom = 0;
+var zoom = 0;
 
 function CameraSize () {
     this.width = 0;
@@ -92,6 +122,7 @@ var onImageLoadError = function() {
 };
 
 var onQueryDone = function (ret) {
+    getMaxZoom();
     $('#qr').addClass('hidden');
     $('#camera').removeClass('hidden');
     
@@ -119,7 +150,6 @@ var onQueryDone = function (ret) {
         }
     }
     $("#resolution-choice").bind("change", doChangeRes);  
-    $("#debug_msg").html("Connected");
 
     // Trigger resolution changes (setup)
     // and start streaming
@@ -127,7 +157,6 @@ var onQueryDone = function (ret) {
 };
 
 var onHttpError = function (err) {
-    $("#debug_msg").html("Can't connected with phone, please refresh web page!");  
     console.log("Something went wrong..."); 
     console.log("Error: ", err);
 };
@@ -141,13 +170,13 @@ var refreshLive = function() {
 var playClick = function () {
     if  ( inStreaming == false) {
         inStreaming = true;
-        $("#btn_play").val("Stop");
+        $("#btn_play").html("Pause");
         
         refreshLive();
 
     } else {
         inStreaming = false;
-        $("#btn_play").val("Play");
+        $("#btn_play").html("Play");
     }
 };
 
@@ -159,6 +188,7 @@ var onSetupOK = function() {
     if(!inStreaming) {
         playClick();
     }
+
 };
 
 var doChangeRes = function () {
@@ -174,6 +204,94 @@ var doChangeRes = function () {
     });
 };
 
+var getMaxZoom = function() {
+    
+    $.ajax({
+        type: "GET",
+        url: basicURL + "cgi/getMaxZoom",
+        cache: false,
+        success: function(data) {maxZoom = data; console.log("maxzoon", maxZoom)}
+    });
+};
+
+//////////////////////////////////////////////
+// Button actions
+//////////////////////////////////////////////
+
+$('#zoomIn').click(function() {zoomIn();});
+var zoomIn = function() {
+    console.log("zoomIn");
+    zoom = zoom + 5; 
+    if(zoom > maxZoom) {
+        zoom = maxZoom;
+    }
+
+    $.ajax({
+        type: "GET",
+        url: basicURL + "cgi/zoom",
+        cache: false,
+        data: 'zoom='+zoom,
+        success: function(data) {console.log("zoomIn")}
+    });
+};
+
+$('#zoomOut').click(function() {zoomOut();});
+var zoomOut = function() {
+    console.log("zoomOut");
+    zoom = zoom - 5; 
+    if(zoom < 0) {
+        zoom = 0;
+    }
+
+    $.ajax({
+        type: "GET",
+        url: basicURL + "cgi/zoom",
+        cache: false,
+        data: 'zoom='+zoom,
+        success: function(data) {console.log("zoomOut")}
+    });
+};
+
+$('#autoFocus').click(function() {autoFocus();});
+var autoFocus = function() {
+    console.log("autofocus");
+    $.ajax({
+        type: "GET",
+        url: basicURL + "cgi/focus",
+        cache: false,
+        success: function(data) {console.log("focus")}
+    });
+};
+
+
+$('#showManualInput').click(function(e) {
+    e.preventDefault();
+
+    if($('#manualInput').hasClass('hidden')) {
+        $('#manualInput').removeClass('hidden');
+    }
+    else {
+      $('#manualInput').addClass('hidden');
+    }
+});
+
+$('#generateQR').click(function(e) {
+    e.preventDefault(); 
+    qr($('#manualIP').val());
+});
+
+
+$('#clearCanvas').click(function(e) {
+    Painter.clearCanvas();
+});
+
+$('#eraser').click(function(e) {
+    Painter.setEraser();
+});
+
+$('#highlighter').click(function(e) {
+    Painter.setHighlighter();
+});
 
  //////////////////////////////////////////////
  // QR-Code
@@ -248,7 +366,9 @@ var doChangeRes = function () {
 //////////////////////////////////////////////
  // Helper functions
 //////////////////////////////////////////////
-
+    $('#showQR').click(function(e) {
+        showQRCodeHideCamera();
+    });
     function showQRCodeHideCamera() {
         $('#camera').addClass('hidden');
         $('#qr').removeClass('hidden');
@@ -257,6 +377,7 @@ var doChangeRes = function () {
 
 
     function getIPAddress(callback) {
+        var found = false;
         var os=require('os');
         var ifaces=os.networkInterfaces();
         for (var dev in ifaces) {
@@ -266,14 +387,17 @@ var doChangeRes = function () {
             if (details.family=='IPv4' && dev !='lo' && details.internal != true) {
               console.log('Drawing IP: ' + dev+(alias?':'+alias:''),details.address + " " + details.internal);
               //++alias;
+              found = true;
               callback(details.address);
              return;    
             }   
           });
         }
     
-        // TODO: If no IP-address is found, ask IP manually
-
+        if(!found) {
+            $('#manualInput').removeClass('hidden');
+            $('#manualIP').focus();
+        }
     }
 
     // For centering elements
@@ -298,18 +422,40 @@ var doChangeRes = function () {
         }
 
         element.css({top:top + 'px', left: left + 'px'});
-
     }
+
+
+//////////////////////////////////////////////
+ // Scroll listener
+//////////////////////////////////////////////    
+var mousewheelevt=(/Firefox/i.test(navigator.userAgent))? "DOMMouseScroll" : "mousewheel" //FF doesn't recognize mousewheel as of FF3.x
+ 
+if (document.attachEvent) //if IE (and Opera depending on user setting)
+    document.attachEvent("on"+mousewheelevt, onScroll)
+else if (document.addEventListener) //WC3 browsers
+    document.addEventListener(mousewheelevt, onScroll, false)
+
+function onScroll(e) {
+    if(e.wheelDelta > 0) {
+        $('#zoomIn').click();
+    }
+    else if(e.wheelDelta < 0) {
+        $('#zoomOut').click();
+    }
+}
 
 //////////////////////////////////////////////
  // Getting stuff done after load
 //////////////////////////////////////////////
 
+
     $(document).ready(function() {
         //Load gui library
         var gui = require('nw.gui'); 
 
-        //style dropdown
+        //scale no-connection image
+        $('#live_image').width($(window).width());
+        $('#live_image').height($(window).height());
 
         //Show local computer's ip and generate QR
         getIPAddress(qr);
@@ -321,6 +467,46 @@ var doChangeRes = function () {
             win.close();
         });
 
+        //Hide menu if mouse is not moving
+        (function() {
+            var mouseTimer = null;
+            var menuVisible = true;
+
+            function menuHide() {
+                if(!$('#controls').is(':hover')) {
+                    console.log("hiding!");
+                    mouseTimer = null;
+                    $('#controls').addClass('fade');
+                    menuVisible = false;
+                }
+            }
+
+            document.onmousemove = function() {
+                if (mouseTimer) {
+                    window.clearTimeout(mouseTimer);
+                }
+                if (!menuVisible) {
+                    console.log("showing menu");
+                    $('#controls').removeClass('fade');
+                    menuVisible = true;
+                }
+                mouseTimer = window.setTimeout(menuHide, 2000);
+            };
+        })();
+
+        //Dropdown disabled
+        (function(){
+            var customSelects = document.querySelectorAll(".custom-dropdown__select");
+            for(var i=0; i<customSelects.length; i++){
+                if (customSelects[i].hasAttribute("disabled")){
+                    customSelects[i].parentNode.className += " custom-dropdown--disabled";
+                }
+            }    
+        })();
+
+        //init drawing area
+        Painter.init('drawingArea');
+        Painter.setHighlighter();
     });
 
   </script>
