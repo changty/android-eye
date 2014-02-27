@@ -188,8 +188,12 @@ public class MainActivity extends Activity
         inProcessing = true;
         if ( webServer != null)
             webServer.stop();
+        
         cameraView_.StopPreview(); 
-
+        
+		//This fixes all camera issues (frees camera for barcode scanner)
+		//Moved from intent to here - let's see if it fixes issues
+        //cameraView_.Release();
     }  
 
     @Override
@@ -228,10 +232,7 @@ public class MainActivity extends Activity
     /* QR-Code stuff */
 	public void readQRCode(View view) {		
 		Log.d("DEBUG", "Open BARCODE Intent");
-		onPause();
-		//This fixes all camera issues (frees camera for barcode scanner)
-		cameraView_.Release();
-		
+		//onPause();
 		try {
 			Intent intent = new Intent("com.google.zxing.client.android.SCAN");
 			intent.putExtra("SCAN_MODE", "QR_CODE_MODE"); // Set zxing reader to QR-mode

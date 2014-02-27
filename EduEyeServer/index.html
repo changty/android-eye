@@ -3,6 +3,7 @@
   <head>
     <title>EduEye - Desktop</title>
       <link type="text/css" rel="stylesheet" href="css/main.css" />
+      <link type="text/css" rel="stylesheet" href="css/font-awesome.min.css" />
       <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
       <script src="res/jquery.waitforimages.js"></script>
       <script src="res/jquery.qrcode-0.7.0.min.js"></script>
@@ -13,10 +14,10 @@
 
   <body>
 
-    <div id="exit">x</div>
+    <div id="exit"><i class="fa fa-times"></i></div>
 
     <!-- QR-Code view -->
-    <div id="qr" class="page ">
+    <div id="qr" class="page hidden">
         <div id="item">
             <canvas id="qrcode"></canvas>
             <p>Read the QR-code with your mobile device</p>
@@ -25,8 +26,45 @@
 
             <div class="clearfix"></div>
             <div id="manualInput" class="hidden">
-                <input id="manualIP" class="txtfield txtfield-medium pull-left"  type="text" placeholder="Type in IP-address" />
-                <button id="generateQR"  class="pull-left  btn btn-2 btn-2c pull-left btn-small">Generate QR</button>
+                <form id="manualInputForm">
+                    <input id="manualIP" class="txtfield txtfield-medium pull-left"  type="text" placeholder="Type in IP-address" />
+                    <button id="generateQR" type="submit" class="pull-left  btn btn-2 btn-2c pull-left btn-small">Generate <i class="fa fa-qrcode"></i></button>
+                </form>
+                <div class="clearfix"></div>
+
+                <div class="osContainer">
+                    <a href="#" class="osbtn">
+                        <i class="fa fa-apple fa-2x" id="apple"></i>
+                    </a>
+                    
+                    <a href="#" class="osbtn">
+                        <i class="fa fa-linux fa-2x" id="linux"></i>
+                    </a>
+
+                    <a href="#" class="osbtn">
+                        <i class="fa fa-windows fa-2x" id="windows"></i>
+                    </a>
+
+                    <div class="clearfix"></div>
+
+                    <div class="explanation hidden" id="apple_expl">
+                        <p>Open <b>terminal</b>. <br /> 
+                            Type <i>ifconfig</i>
+                        </p>
+                    </div>
+                    <div class="explanation hidden" id="linux_expl">
+                        <p>Open <b>terminal</b>. <br/> 
+                            Type <i>ifconfig</i>
+                        </p>
+
+                    </div>
+                    <div class="explanation hidden" id="windows_expl">
+                        <p>Press <b>Windows + R </b>. Type in <i>cmd</i> and press Enter.<br />
+                            Type <i>ipconfig</i>
+                        </p>
+                    </div>
+
+                </div>
             </div>
         </div>
     </div>
@@ -35,7 +73,7 @@
 
 
     <!-- Camera View -->
-    <div id="camera" class="page  hidden">
+    <div id="camera" class="page ">
               
 
         <div class="live_image_box" id="video_plane">
@@ -44,9 +82,11 @@
 
 
         <canvas id="drawingArea"></canvas>
-
+        <canvas id="mousePointer"></canvas>
+        <canvas id="crop"></canvas>
+        
         <div id="controls" class="controls">
-            <button id="showQR"  class="pull-left  btn btn-2 btn-2c"><</button>
+            <button id="showQR"  class="pull-left  btn btn-2 btn-2c"><i class="fa fa-chevron-left"></i></button>
 
 
             <span class="custom-dropdown custom-dropdown--emerald custom-dropdown--large">
@@ -56,16 +96,16 @@
                 </select>
             </span>
 
-            <button id="btn_play"  class="btn btn-2 btn-2c">Play</button>
+            <button id="btn_play"  class="btn btn-2 btn-2c"><i class="fa fa-play"></i></button>
 
-            <button id="autoFocus" class="pull-right btn btn-2 btn-2c"/>AF</button>
-            <button id="zoomOut" class="pull-right btn btn-2 btn-2c"/>-</button>
-            <button id="zoomIn" class="pull-right btn btn-2 btn-2c" />+</button>
+            <button id="autoFocus" class="pull-right btn btn-2 btn-2c "/><i class="fa fa-bullseye"></i></button>
+            <button id="zoomOut" class="pull-right btn btn-2 btn-2c "/><i class="fa fa-search-minus"></i></button>
+            <button id="zoomIn" class="pull-right btn btn-2 btn-2c " /><i class="fa fa-search-plus"></i></button>
 
 
             <button id="clearCanvas" class="pull-right btn btn-green" />Clear</button>
-            <button id="eraser" class="pull-right btn btn-green" />Eraser</button>
-            <button id="highlighter" class="pull-right btn btn-green" />Highlighter</button>
+            <button id="eraser" class="pull-right btn btn-green selectable" /><i class="fa fa-eraser"></i></button>
+            <button id="highlighter" class="pull-right btn btn-green selectable" /><i class="fa fa-pencil"></i></button>
 
 
 
@@ -170,13 +210,13 @@ var refreshLive = function() {
 var playClick = function () {
     if  ( inStreaming == false) {
         inStreaming = true;
-        $("#btn_play").html("Pause");
+        $("#btn_play").html('<i class="fa fa-pause"></i>');
         
         refreshLive();
 
     } else {
         inStreaming = false;
-        $("#btn_play").html("Play");
+        $("#btn_play").html('<i class="fa fa-play"></i>');
     }
 };
 
@@ -266,6 +306,9 @@ var autoFocus = function() {
 
 $('#showManualInput').click(function(e) {
     e.preventDefault();
+
+    //Hide all the explanations
+    $('.explanation').addClass('hidden');
 
     if($('#manualInput').hasClass('hidden')) {
         $('#manualInput').removeClass('hidden');
@@ -443,6 +486,42 @@ function onScroll(e) {
         $('#zoomOut').click();
     }
 }
+
+//////////////////////////////////////////////
+ // Handle IP-tips
+//////////////////////////////////////////////    
+
+$('.osbtn').click(function(e) {
+    e.preventDefault();
+    var clickedOs = e.target.id;
+    console.log("clicked os", clickedOs);
+
+    //Hide all the explanations
+    $('.explanation').addClass('hidden');
+
+    //Show clicked explanation
+    if(clickedOs === 'apple') {
+        $('#apple_expl').removeClass('hidden');
+    }
+    else if(clickedOs === 'linux') {
+        $('#linux_expl').removeClass('hidden');
+    }
+    else if(clickedOs === 'windows') {
+        $('#windows_expl').removeClass('hidden');
+    }
+});
+
+
+//////////////////////////////////////////////
+ // Handle selectable buttons
+//////////////////////////////////////////////  
+
+$('.selectable').click(function(e) {
+    e.preventDefault(); 
+
+    $('.selectable').removeClass('active');
+    $(this).addClass('active');
+});
 
 //////////////////////////////////////////////
  // Getting stuff done after load
