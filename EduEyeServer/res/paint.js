@@ -4,6 +4,7 @@ var Painter =  {
 	radius:  10,
 	fillColor: 'rgba(255,255,255,0.1',
 	mode: 'highlighter',
+	doCrop: false,
 
 	init: function(element) {
 		Painter.canvas = document.getElementById(element);
@@ -13,7 +14,7 @@ var Painter =  {
 		Painter.mousePointer.ctx = Painter.mousePointer.getContext('2d');
 
 		Painter.crop = document.getElementById('crop');
-		Painter.crop.ctx = Painter.mousePointer.getContext('2d');
+		Painter.crop.ctx = Painter.crop.getContext('2d');
 
 		Painter.compositeOperation = Painter.ctx.globalCompositeOperation;
 
@@ -53,15 +54,35 @@ var Painter =  {
 		if(!Painter.canvas.isDrawing) {
 			return; 
 		}
-		var x = e.pageX - this.offsetLeft;
-		var y = e.pageY - this.offsetTop;
-		Painter.fillCircle(x, y, Painter.radius, Painter.fillColor);
+		if(!Painter.doCrop) {
+			var x = e.pageX - this.offsetLeft;
+			var y = e.pageY - this.offsetTop;
+			Painter.fillCircle(x, y, Painter.radius, Painter.fillColor);
+		}
 	},
 
 	onmousedown: function(e) {
-		Painter.x0 = e.pageX; 
-		Painter.y0 = e.pageY;
-		if(e.button == 2) {
+		
+		if(Painter.doCrop) {
+			//if mouse down happens on top of square, mark onCrop true	
+			if(e.pageX >= Painter.x0 && e.pageY >= Painter.y0 && e.pageX <= Painter.x1 && e.pageY <= Painter.y1) {
+				console.log("ontop");
+				Painter.canvas.onCrop = true;
+
+				//save clicked position to calculate 
+				//change in position
+				//and closes corner
+				Painter.x2 = e.pageX; 
+				Painter.y2 = e.pageY; 
+			}
+			else {
+				Painter.x0 = e.pageX; 
+				Painter.y0 = e.pageY;
+			}
+		}
+
+		if(e.button == 2) { 
+			Painter.oldMode = Painter.mode;
 			Painter.setEraser();
 		}
 		else if(Painter.mode=='highlighter'){
@@ -83,8 +104,19 @@ var Painter =  {
 	},
 
 	onmouseup: function(e) {
-		Painter.x1 = e.pageX; 
-		Painter.y1 = e.pageY;
+		//set back highlighter (or any other tool)
+		if(Painter.oldMode) {
+			Painter.mode = Painter.oldMode;
+			if(Painter.mode === 'highlighter') {
+				Painter.setHighlighter();
+			}
+		}
+		Painter.oldMode = null;
+
+		if(Painter.doCrop) {
+			Painter.x1 = e.pageX; 
+			Painter.y1 = e.pageY;
+		}
 
 		Painter.canvas.isDrawing = false;
 	},
@@ -103,6 +135,9 @@ var Painter =  {
 		if(!$('#eraser').hasClass('active')) {
 			$('#eraser').addClass('active');
 		}
+		if($('#highlighter').hasClass('active')) {
+			$('#highlighter').removeClass('active');
+		}
 	},
 
 	setHighlighter : function() {
@@ -114,6 +149,9 @@ var Painter =  {
 		if(!$('#highlighter').hasClass('active')) {
 			$('#highlighter').addClass('active');
 		}
+		if($('#eraser').hasClass('active')) {
+			$('#eraser').removeClass('active');
+		}
 	},
 
 	animate: function() {
@@ -121,8 +159,11 @@ var Painter =  {
 		Painter.mousePointer.ctx.clearRect(0, 0, Painter.mousePointer.width, Painter.mousePointer.height);
 		Painter.crop.ctx.clearRect(0, 0, Painter.crop.width, Painter.crop.height);
 
-		Painter.drawPointer();		
-		//Painter.drawCrop();
+		Painter.drawPointer();	
+
+		if(Painter.doCrop) {
+			Painter.drawCrop();	
+		}	
 	},
 
 	movepointer: function(e) {
@@ -167,21 +208,70 @@ var Painter =  {
 	drawCrop: function() {
 		var context = Painter.crop.ctx;
 
-		context.beginPath();
-		context.fillColor = '#000';
-		context.fillRect(0,0, Painter.crop.width, Painter.crop.height);
-		context.fill();
+		//Painter.crop.ctx.beginPath();
+		Painter.crop.ctx.fillStyle = '#222';
+		Painter.crop.ctx.fillRect(0,0, Painter.crop.width, Painter.crop.height);
+		Painter.crop.ctx.fill();
 
-		//if true, clicked down
-		if(Painter.canvas.isDrawing) {
+
+			//Drawing and started on top of the square
+		if(Painter.canvas.isDrawing && Painter.canvas.onCrop) {
+
+			//Left top  x0,y0
+			//width 	x1 - x0
+			//height	y1 - y0
+
+			//change in width = w + (x2 - x)
+			//change in height = h + (y1 - y)
+
+			// This solutions works the worng way (althoug it works)
+			//var recW = (Painter.x1 - Painter.x0) + (Painter.x2 - Painter.x); 
+			//var recH = (Painter.y1 - Painter.y0) + (Painter.y2 - Painter.y);
+
+			var recW = (Painter.x1 - Painter.x0) + (Painter.x - Painter.x2); 
+			var recH = (Painter.y1 - Painter.y0) + (Painter.y - Painter.y2);
+			
+			//var recW = Painter.x - Painter.x0; 
+			//var recH = Painter.y - Painter.y0;
+			context.beginPath();
+		    context.rect(Painter.x0, Painter.y0, recW, recH);
+		    context.fill();
+		    context.lineWidth = 8;
+		    context.strokeStyle = 'rgba(255,255,255,0.5)';
+		    context.stroke();
+
+		}
+
+		else if(Painter.canvas.onCrop && !Painter.canvas.isDrawing) {
+
+//			Painter.x1 = Painter.x + (Painter.x - Painter.x2);
+//			Painter.y1 = Painter.y + (Painter.y - Painter.y2);
+
+			// draws the square after mouse up (final shape after resize)
+			// atm. the square will be resized to the position of the mouse at end of editing
+			// this should be fixed
+			var recW = Painter.x1 - Painter.x0; 
+			var recH = Painter.y1 - Painter.y0;
+			context.beginPath();
+		    context.rect(Painter.x0, Painter.y0, recW, recH);
+		    context.fill();
+		    context.lineWidth = 8;
+		    context.strokeStyle = 'rgba(255,255,255,0.5)';
+		    context.stroke();
+
+
+			Painter.canvas.onCrop = false;
+		}
+				//if true, clicked down
+		else if(Painter.canvas.isDrawing) {
 			var recW = Painter.x - Painter.x0; 
 			var recH = Painter.y - Painter.y0;
 
 		    context.beginPath();
 		    context.rect(Painter.x0, Painter.y0, recW, recH);
 		    context.fill();
-		    context.lineWidth = 7;
-		    context.strokeStyle = '#fff';
+		    context.lineWidth = 8;
+		    context.strokeStyle = 'rgba(255,255,255,0.5)';
 		    context.stroke();
 		}
 		else {
@@ -190,8 +280,8 @@ var Painter =  {
 			context.beginPath();
 		    context.rect(Painter.x0, Painter.y0, recW, recH);
 		    context.fill();
-		    context.lineWidth = 7;
-		    context.strokeStyle = '#fff';
+		    context.lineWidth = 8;
+		    context.strokeStyle = 'rgba(255,255,255,0.5)';
 		    context.stroke();
 		}
 

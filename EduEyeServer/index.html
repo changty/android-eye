@@ -103,6 +103,7 @@
             <button id="zoomIn" class="pull-right btn btn-2 btn-2c " /><i class="fa fa-search-plus"></i></button>
 
 
+            <button id="cropper" class="pull-right btn btn-green" />Crop</button>
             <button id="clearCanvas" class="pull-right btn btn-green" />Clear</button>
             <button id="eraser" class="pull-right btn btn-green selectable" /><i class="fa fa-eraser"></i></button>
             <button id="highlighter" class="pull-right btn btn-green selectable" /><i class="fa fa-pencil"></i></button>
@@ -334,6 +335,18 @@ $('#eraser').click(function(e) {
 
 $('#highlighter').click(function(e) {
     Painter.setHighlighter();
+});
+
+$('#cropper').click(function(e) {
+    console.log(Painter.doCrop);
+    if(!Painter.doCrop) {
+        $('#cropper').addClass('active');
+        Painter.doCrop = true;
+    }
+    else {
+        $('#cropper').removeClass('active');
+        Painter.doCrop = false;
+    }
 });
 
  //////////////////////////////////////////////
