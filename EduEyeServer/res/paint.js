@@ -59,6 +59,8 @@ var Painter =  {
 	},
 
 	onmousedown: function(e) {
+		Painter.x0 = e.pageX; 
+		Painter.y0 = e.pageY;
 		if(e.button == 2) {
 			Painter.setEraser();
 		}
@@ -81,6 +83,9 @@ var Painter =  {
 	},
 
 	onmouseup: function(e) {
+		Painter.x1 = e.pageX; 
+		Painter.y1 = e.pageY;
+
 		Painter.canvas.isDrawing = false;
 	},
 
@@ -114,7 +119,10 @@ var Painter =  {
 	animate: function() {
 		requestAnimationFrame(Painter.animate);
 		Painter.mousePointer.ctx.clearRect(0, 0, Painter.mousePointer.width, Painter.mousePointer.height);
+		Painter.crop.ctx.clearRect(0, 0, Painter.crop.width, Painter.crop.height);
+
 		Painter.drawPointer();		
+		//Painter.drawCrop();
 	},
 
 	movepointer: function(e) {
@@ -123,6 +131,8 @@ var Painter =  {
 	},
 
 	drawPointer: function() {
+				//Painter.crop.ctx.clearRect(0, 0, Painter.crop.width, Painter.crop.height);
+
 		if($('#controls').is(':hover')) {
 			Painter.mousePointer.ctx.clearRect(0, 0, Painter.mousePointer.width, Painter.mousePointer.height);
 		}
@@ -152,6 +162,42 @@ var Painter =  {
 
 			}
 		}
+	}, 
+
+	drawCrop: function() {
+		var context = Painter.crop.ctx;
+
+		context.beginPath();
+		context.fillColor = '#000';
+		context.fillRect(0,0, Painter.crop.width, Painter.crop.height);
+		context.fill();
+
+		//if true, clicked down
+		if(Painter.canvas.isDrawing) {
+			var recW = Painter.x - Painter.x0; 
+			var recH = Painter.y - Painter.y0;
+
+		    context.beginPath();
+		    context.rect(Painter.x0, Painter.y0, recW, recH);
+		    context.fill();
+		    context.lineWidth = 7;
+		    context.strokeStyle = '#fff';
+		    context.stroke();
+		}
+		else {
+			var recW = Painter.x1 - Painter.x0; 
+			var recH = Painter.y1 - Painter.y0;
+			context.beginPath();
+		    context.rect(Painter.x0, Painter.y0, recW, recH);
+		    context.fill();
+		    context.lineWidth = 7;
+		    context.strokeStyle = '#fff';
+		    context.stroke();
+		}
+
+		Painter.crop.ctx.clearRect(Painter.x0, Painter.y0, recW, recH);
+
+
 	}
 
 	

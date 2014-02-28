@@ -12,6 +12,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
@@ -72,6 +73,16 @@ public class MainActivity extends Activity
 
         setContentView(R.layout.main);
 
+        
+    	PackageManager pm = getPackageManager();
+    	boolean frontCam, rearCam;
+
+    	//Must have a targetSdk >= 9 defined in the AndroidManifest
+    	frontCam = pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT);
+    	rearCam = pm.hasSystemFeature(PackageManager.FEATURE_CAMERA);
+    	
+    	Log.d("CAMERA", "FRONT: " + frontCam + ", REAR: " + rearCam );
+        
         btnExit = (Button)findViewById(R.id.btn_exit);
         btnExit.setOnClickListener(exitAction);
         tvMessage1 = (TextView)findViewById(R.id.tv_message1);
@@ -147,9 +158,7 @@ public class MainActivity extends Activity
             //Turn camera the correct angle by default
             cameraView_.setCameraDisplayOrientation(this);
             cameraView_.StartPreview();
-            
-            //added autofocus here - not sure if any effect
-            //cameraView_.AutoFocus();
+ 
         }
     }
     
@@ -190,6 +199,8 @@ public class MainActivity extends Activity
             webServer.stop();
         
         cameraView_.StopPreview(); 
+        cameraView_.Release();
+
         
 		//This fixes all camera issues (frees camera for barcode scanner)
 		//Moved from intent to here - let's see if it fixes issues
@@ -238,8 +249,8 @@ public class MainActivity extends Activity
 			intent.putExtra("SCAN_MODE", "QR_CODE_MODE"); // Set zxing reader to QR-mode
 			startActivityForResult(intent, 0); // requestCode 0
 		}
-		catch (Exception e) {
-			Uri marketUri = Uri.parse("market://details?=id=com.google.zxing.client.android");
+		catch (Exception e) {			
+			Uri marketUri = Uri.parse("market://details?id=com.google.zxing.client.android");
 			Intent marketIntent = new Intent(Intent.ACTION_VIEW, marketUri);
 			startActivity(marketIntent);
 		}
@@ -270,6 +281,9 @@ public class MainActivity extends Activity
 	}
 
     private void initCamera() {
+    	
+    	// detect camera here!
+    	
         SurfaceView cameraSurface = (SurfaceView)findViewById(R.id.surface_camera);
         cameraView_ = new CameraView(cameraSurface);        
         cameraView_.setCameraReadyCallback(this);

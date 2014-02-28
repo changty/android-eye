@@ -1,6 +1,7 @@
 package fi.einarikurvinen.edueye;
 
 import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Parameters;
@@ -73,6 +74,7 @@ public class CameraView implements SurfaceHolder.Callback{
         if ( camera_ != null) {
             isReady = false;
             camera_.stopPreview();
+            camera_.setPreviewCallback(null);
             camera_.release();
             camera_ = null;
         }
@@ -91,24 +93,31 @@ public class CameraView implements SurfaceHolder.Callback{
     }
 
     private void setupCamera() {
-        camera_ = Camera.open();
-        procSize_ = camera_.new Size(0, 0);
+
+    	try {
+    		camera_ = Camera.open(0);
+    	}
+    	catch (Exception e) {
+    		setupCamera(); 
+    		return;
+    	}
+        //procSize_ = camera_.new Size(0, 0);
         Camera.Parameters p = camera_.getParameters();        
        
         supportedSizes = p.getSupportedPreviewSizes();
         procSize_ = supportedSizes.get( supportedSizes.size()/2 );
         p.setPreviewSize(procSize_.width, procSize_.height);
-        
-        p.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+        //p.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
         
         camera_.setParameters(p);
        // camera_.setDisplayOrientation(90);
         try {
             camera_.setPreviewDisplay(surfaceHolder_);
+            camera_.startPreview();    
         } catch ( Exception ex) {
+        	camera_.release();
             ex.printStackTrace(); 
         }
-        camera_.startPreview();    
     }  
     
     private Camera.AutoFocusCallback afcb = new Camera.AutoFocusCallback() {
