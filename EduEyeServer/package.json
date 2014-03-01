@@ -3,8 +3,8 @@
   "main": "index.html",
   "window": {
 	    "toolbar": false,
-	    "fullscreen": true,
-	    "width": 800,
-	    "height": 600
+	    "fullscreen": false,
+	    "width": 960,
+	    "height": 800
   }
 }

@@ -5,6 +5,7 @@ var Painter =  {
 	fillColor: 'rgba(255,255,255,0.1',
 	mode: 'highlighter',
 	doCrop: false,
+	onCrop : false,
 
 	init: function(element) {
 		Painter.canvas = document.getElementById(element);
@@ -48,13 +49,14 @@ var Painter =  {
 	//bind mouse events
 	onmousemove: function(e) {
 
-		Painter.x = e.pageX
+		Painter.x = e.pageX;
 		Painter.y = e.pageY;
-
+		
 		if(!Painter.canvas.isDrawing) {
 			return; 
 		}
-		if(!Painter.doCrop) {
+
+		if(Painter.mode !='hand') {
 			var x = e.pageX - this.offsetLeft;
 			var y = e.pageY - this.offsetTop;
 			Painter.fillCircle(x, y, Painter.radius, Painter.fillColor);
@@ -63,11 +65,24 @@ var Painter =  {
 
 	onmousedown: function(e) {
 		
-		if(Painter.doCrop) {
+		if(e.button == 2) { 
+			Painter.oldMode = Painter.mode;
+			Painter.setEraser();
+		}
+		else if(Painter.mode=='highlighter'){
+			Painter.setHighlighter();
+		}
+		else if(Painter.mode == 'hand') {
+			Painter.setHand();
+		}
+
+
+		if(Painter.doCrop && Painter.mode == 'hand') {
 			//if mouse down happens on top of square, mark onCrop true	
 			if(e.pageX >= Painter.x0 && e.pageY >= Painter.y0 && e.pageX <= Painter.x1 && e.pageY <= Painter.y1) {
-				console.log("ontop");
-				Painter.canvas.onCrop = true;
+				//click happened inside old selected area
+				//We shall resize it in stead of drawing a new one
+				Painter.onCrop = true;
 
 				//save clicked position to calculate 
 				//change in position
@@ -81,18 +96,10 @@ var Painter =  {
 			}
 		}
 
-		if(e.button == 2) { 
-			Painter.oldMode = Painter.mode;
-			Painter.setEraser();
-		}
-		else if(Painter.mode=='highlighter'){
-			Painter.setHighlighter();
-		}
+
 
 		Painter.canvas.isDrawing = true;
 		var ctx = Painter.ctx;
-
-		//ctx.moveTo(x, y);
 		ctx.strokeStyle = Painter.fillColor;
         ctx.lineWidth = Painter.radius;
         ctx.lineCap = 'round';
@@ -104,21 +111,28 @@ var Painter =  {
 	},
 
 	onmouseup: function(e) {
-		//set back highlighter (or any other tool)
-		if(Painter.oldMode) {
-			Painter.mode = Painter.oldMode;
-			if(Painter.mode === 'highlighter') {
-				Painter.setHighlighter();
-			}
-		}
-		Painter.oldMode = null;
 
-		if(Painter.doCrop) {
+		if(Painter.doCrop && Painter.mode == 'hand' && !Painter.onCrop) {
 			Painter.x1 = e.pageX; 
 			Painter.y1 = e.pageY;
 		}
 
+
+		//set back highlighter (or any other tool)
+		if(Painter.oldMode) {
+			$('.selectable').removeClass('active');
+			Painter.mode = Painter.oldMode;
+			if(Painter.mode === 'highlighter') {
+				Painter.setHighlighter();
+			}
+			else if(Painter.mode === 'hand') {
+				Painter.setHand();
+			}
+		}
+		Painter.oldMode = null;
+
 		Painter.canvas.isDrawing = false;
+
 	},
 
 	clearCanvas: function() {
@@ -132,12 +146,9 @@ var Painter =  {
 		Painter.ctx.globalCompositeOperation = 'destination-out';
 		Painter.radius = 30;
 
-		if(!$('#eraser').hasClass('active')) {
-			$('#eraser').addClass('active');
-		}
-		if($('#highlighter').hasClass('active')) {
-			$('#highlighter').removeClass('active');
-		}
+		$('.selectable').removeClass('active');
+		$('#eraser').addClass('active');
+
 	},
 
 	setHighlighter : function() {
@@ -145,13 +156,14 @@ var Painter =  {
 		Painter.fillColor = 'rgba(255,255, 0, 0.5)';
 		Painter.ctx.globalCompositeOperation =  'destination-atop';
 		Painter.radius = 10;
-		
-		if(!$('#highlighter').hasClass('active')) {
-			$('#highlighter').addClass('active');
-		}
-		if($('#eraser').hasClass('active')) {
-			$('#eraser').removeClass('active');
-		}
+		$('.selectable').removeClass('active');
+		$('#highlighter').addClass('active');
+	},
+
+	setHand: function() {
+		Painter.mode = 'hand';
+		$('.selectable').removeClass('active');
+		$('#hand').addClass('active');
 	},
 
 	animate: function() {
@@ -164,11 +176,6 @@ var Painter =  {
 		if(Painter.doCrop) {
 			Painter.drawCrop();	
 		}	
-	},
-
-	movepointer: function(e) {
-		Painter.x = e.pageX
-		Painter.y = e.pageY;
 	},
 
 	drawPointer: function() {
@@ -214,8 +221,89 @@ var Painter =  {
 		Painter.crop.ctx.fill();
 
 
-			//Drawing and started on top of the square
-		if(Painter.canvas.isDrawing && Painter.canvas.onCrop) {
+		//Drawing and started on top of the square (live resize)
+		if(Painter.canvas.isDrawing && Painter.onCrop  && Painter.mode == 'hand') {
+
+			var recW = (Painter.x1 - Painter.x0) + (Painter.x - Painter.x2); 
+			var recH = (Painter.y1 - Painter.y0) + (Painter.y - Painter.y2);
+		
+			Painter.x1n = Painter.x0 + recW; 
+			Painter.y1n = Painter.y0 + recH;
+
+
+			context.beginPath();
+		    context.rect(Painter.x0, Painter.y0, recW, recH);
+		    context.fill();
+		    context.lineWidth = 8;
+		    context.strokeStyle = 'rgba(255,255,255,0.5)';
+		    context.stroke();
+
+
+		}
+
+		//crop-mode (reisze crop) and mouse lifted up
+		else if(Painter.onCrop && !Painter.canvas.isDrawing && Painter.mode == 'hand') {
+		    Painter.x1 = Painter.x1n; 
+		    Painter.y1 = Painter.y1n;
+
+    		var recW = Painter.x1 - Painter.x0; 
+			var recH = Painter.y1 - Painter.y0;
+
+			context.beginPath();
+		    context.rect(Painter.x0, Painter.y0, recW, recH);
+		    context.fill();
+		    context.lineWidth = 8;
+		    context.strokeStyle = 'rgba(255,255,255,0.5)';
+		    context.stroke();
+
+		    Painter.onCrop = false;
+		} 
+
+
+			 //if true, clicked down - live drawing
+		else if(Painter.canvas.isDrawing  && Painter.mode == 'hand' ) {
+			var recW = Painter.x - Painter.x0; 
+			var recH = Painter.y - Painter.y0;
+
+		    context.beginPath();
+		    context.rect(Painter.x0, Painter.y0, recW, recH);
+		    context.fill();
+		    context.lineWidth = 8;
+		    context.strokeStyle = 'rgba(255,255,255,0.5)';
+		    context.stroke();
+		}
+
+		//just draw the area!
+		else {
+			var recW = Painter.x1 - Painter.x0; 
+			var recH = Painter.y1 - Painter.y0;
+			context.beginPath();
+		    context.rect(Painter.x0, Painter.y0, recW, recH);
+		    context.fill();
+		    context.lineWidth = 8;
+		    context.strokeStyle = 'rgba(255,255,255,0.5)';
+		    context.stroke();
+		}
+
+		Painter.crop.ctx.clearRect(Painter.x0, Painter.y0, recW, recH);
+
+
+	}
+
+	
+};
+
+
+
+
+
+
+/** old solution for crop resize 
+
+
+
+		//Drawing and started on top of the square
+		if(Painter.canvas.isDrawing && Painter.canvas.onCrop  && Painter.mode == 'hand') {
 
 			//Left top  x0,y0
 			//width 	x1 - x0
@@ -242,56 +330,4 @@ var Painter =  {
 
 		}
 
-		else if(Painter.canvas.onCrop && !Painter.canvas.isDrawing) {
-
-//			Painter.x1 = Painter.x + (Painter.x - Painter.x2);
-//			Painter.y1 = Painter.y + (Painter.y - Painter.y2);
-
-			// draws the square after mouse up (final shape after resize)
-			// atm. the square will be resized to the position of the mouse at end of editing
-			// this should be fixed
-			var recW = Painter.x1 - Painter.x0; 
-			var recH = Painter.y1 - Painter.y0;
-			context.beginPath();
-		    context.rect(Painter.x0, Painter.y0, recW, recH);
-		    context.fill();
-		    context.lineWidth = 8;
-		    context.strokeStyle = 'rgba(255,255,255,0.5)';
-		    context.stroke();
-
-
-			Painter.canvas.onCrop = false;
-		}
-				//if true, clicked down
-		else if(Painter.canvas.isDrawing) {
-			var recW = Painter.x - Painter.x0; 
-			var recH = Painter.y - Painter.y0;
-
-		    context.beginPath();
-		    context.rect(Painter.x0, Painter.y0, recW, recH);
-		    context.fill();
-		    context.lineWidth = 8;
-		    context.strokeStyle = 'rgba(255,255,255,0.5)';
-		    context.stroke();
-		}
-		else {
-			var recW = Painter.x1 - Painter.x0; 
-			var recH = Painter.y1 - Painter.y0;
-			context.beginPath();
-		    context.rect(Painter.x0, Painter.y0, recW, recH);
-		    context.fill();
-		    context.lineWidth = 8;
-		    context.strokeStyle = 'rgba(255,255,255,0.5)';
-		    context.stroke();
-		}
-
-		Painter.crop.ctx.clearRect(Painter.x0, Painter.y0, recW, recH);
-
-
-	}
-
-	
-};
-
-
-
+*/

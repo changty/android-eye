@@ -98,15 +98,16 @@
 
             <button id="btn_play"  class="btn btn-2 btn-2c"><i class="fa fa-play"></i></button>
 
-            <button id="autoFocus" class="pull-right btn btn-2 btn-2c "/><i class="fa fa-bullseye"></i></button>
-            <button id="zoomOut" class="pull-right btn btn-2 btn-2c "/><i class="fa fa-search-minus"></i></button>
-            <button id="zoomIn" class="pull-right btn btn-2 btn-2c " /><i class="fa fa-search-plus"></i></button>
+            <button id="autoFocus" class="pull-right btn btn-2 btn-2c "><i class="fa fa-bullseye"></i></button>
+            <button id="zoomOut" class="pull-right btn btn-2 btn-2c "><i class="fa fa-search-minus"></i></button>
+            <button id="zoomIn" class="pull-right btn btn-2 btn-2c " ><i class="fa fa-search-plus"></i></button>
 
 
-            <button id="cropper" class="pull-right btn btn-green" />Crop</button>
-            <button id="clearCanvas" class="pull-right btn btn-green" />Clear</button>
-            <button id="eraser" class="pull-right btn btn-green selectable" /><i class="fa fa-eraser"></i></button>
-            <button id="highlighter" class="pull-right btn btn-green selectable" /><i class="fa fa-pencil"></i></button>
+            <button id="cropper" class="pull-right btn btn-green"><i class="fa fa-crop"></i></button>
+            <button id="clearCanvas" class="pull-right btn btn-green" >Clear</button>
+            <button id="eraser" class="pull-right btn btn-green selectable" ><i class="fa fa-eraser"></i></button>
+            <button id="highlighter" class="pull-right btn btn-green selectable"><i class="fa fa-pencil"></i></button>
+            <button id="hand" class="pull-right btn btn-green selectable"><i class="fa fa-hand-o-up"></i></button>
 
 
 
@@ -118,11 +119,9 @@
       <script src="res/paint.js"></script>
 
   <script>
-
- //////////////////////////////////////////////
- // Showing the pics
- //////////////////////////////////////////////
-
+//Load gui library
+var gui = require('nw.gui'); 
+gui.Window.get().maximize();
 
 
 //////////////////////////////////////////////
@@ -198,7 +197,6 @@ var onQueryDone = function (ret) {
 };
 
 var onHttpError = function (err) {
-    console.log("Something went wrong..."); 
     console.log("Error: ", err);
 };
 
@@ -251,7 +249,7 @@ var getMaxZoom = function() {
         type: "GET",
         url: basicURL + "cgi/getMaxZoom",
         cache: false,
-        success: function(data) {maxZoom = data; console.log("maxzoon", maxZoom)}
+        success: function(data) {maxZoom = data;}
     });
 };
 
@@ -261,7 +259,6 @@ var getMaxZoom = function() {
 
 $('#zoomIn').click(function() {zoomIn();});
 var zoomIn = function() {
-    console.log("zoomIn");
     zoom = zoom + 5; 
     if(zoom > maxZoom) {
         zoom = maxZoom;
@@ -272,13 +269,12 @@ var zoomIn = function() {
         url: basicURL + "cgi/zoom",
         cache: false,
         data: 'zoom='+zoom,
-        success: function(data) {console.log("zoomIn")}
+        success: function(data) {}
     });
 };
 
 $('#zoomOut').click(function() {zoomOut();});
 var zoomOut = function() {
-    console.log("zoomOut");
     zoom = zoom - 5; 
     if(zoom < 0) {
         zoom = 0;
@@ -289,18 +285,17 @@ var zoomOut = function() {
         url: basicURL + "cgi/zoom",
         cache: false,
         data: 'zoom='+zoom,
-        success: function(data) {console.log("zoomOut")}
+        success: function(data) {}
     });
 };
 
 $('#autoFocus').click(function() {autoFocus();});
 var autoFocus = function() {
-    console.log("autofocus");
     $.ajax({
         type: "GET",
         url: basicURL + "cgi/focus",
         cache: false,
-        success: function(data) {console.log("focus")}
+        success: function(data) {}
     });
 };
 
@@ -342,6 +337,7 @@ $('#cropper').click(function(e) {
     if(!Painter.doCrop) {
         $('#cropper').addClass('active');
         Painter.doCrop = true;
+        Painter.setHand();
     }
     else {
         $('#cropper').removeClass('active');
@@ -349,11 +345,14 @@ $('#cropper').click(function(e) {
     }
 });
 
+$('#hand').click(function(e) {
+    Painter.setHand();
+});
+
  //////////////////////////////////////////////
  // QR-Code
 //////////////////////////////////////////////
   var qr = function(text) {
-    console.log("Darwing QR-code ", text);
     var canvas = document.getElementById('qrcode');
     canvas.height = 350; 
     canvas.width = 350;
@@ -507,7 +506,6 @@ function onScroll(e) {
 $('.osbtn').click(function(e) {
     e.preventDefault();
     var clickedOs = e.target.id;
-    console.log("clicked os", clickedOs);
 
     //Hide all the explanations
     $('.explanation').addClass('hidden');
@@ -542,19 +540,32 @@ $('.selectable').click(function(e) {
 
 
     $(document).ready(function() {
-        //Load gui library
-        var gui = require('nw.gui'); 
 
-        //scale no-connection image
-        $('#live_image').width($(window).width());
-        $('#live_image').height($(window).height());
+        //init drawing area
+        Painter.init('drawingArea');
+        Painter.setHighlighter();
+
+        window.onresize = function(event) {
+            alignMiddle($('#item'));
+
+            //scale no-connection image
+            $('#live_image').width($(window).width());
+            $('#live_image').height($(window).height());
+
+            //make it fullscreen!
+            Painter.canvas.width = $(window).width();
+            Painter.canvas.height = $(window).height();
+            Painter.mousePointer.width = $(window).width();
+            Painter.mousePointer.height = $(window).height();
+            Painter.crop.width = $(window).width();
+            Painter.crop.height = $(window).height();
+        };
 
         //Show local computer's ip and generate QR
         getIPAddress(qr);
 
 
         $('#exit').click(function() {
-            console.log("click");
             var win = gui.Window.get(); 
             win.close();
         });
@@ -566,7 +577,6 @@ $('.selectable').click(function(e) {
 
             function menuHide() {
                 if(!$('#controls').is(':hover')) {
-                    console.log("hiding!");
                     mouseTimer = null;
                     $('#controls').addClass('fade');
                     menuVisible = false;
@@ -578,7 +588,6 @@ $('.selectable').click(function(e) {
                     window.clearTimeout(mouseTimer);
                 }
                 if (!menuVisible) {
-                    console.log("showing menu");
                     $('#controls').removeClass('fade');
                     menuVisible = true;
                 }
@@ -596,9 +605,6 @@ $('.selectable').click(function(e) {
             }    
         })();
 
-        //init drawing area
-        Painter.init('drawingArea');
-        Painter.setHighlighter();
     });
 
   </script>
