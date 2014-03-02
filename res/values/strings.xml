@@ -12,4 +12,5 @@
     <string name="read_qr_code">Read QR-Code</string>
     <string name="connect_to_pc">Connect to PC with QR-code</string>
     <string name="connecting_to_wlan">Connecting to wlan</string>
+    <string name="qrdescr">Scan QR-code -button</string>
 </resources>

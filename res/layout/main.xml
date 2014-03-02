@@ -72,19 +72,21 @@
                     android:layout_height="wrap_content"
                     android:text="" />
 
-                <Button
+                <ImageView
                     android:id="@+id/qrCode"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="146dp"
                     android:onClick="readQRCode"
+                    android:src="@drawable/qrbtn"
                     android:text="@string/read_qr_code" />
 
-                <Button
+                <ImageView
                     android:id="@+id/btn_exit"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="63dp"
+                    android:layout_height="115dp"
                     android:layout_margin="8dip"
                     android:gravity="center_vertical|center_horizontal|bottom"
+                    android:src="@drawable/exitbtn"
                     android:text="@string/action_exit"
                     android:textSize="24sp"
                     android:textStyle="normal" />

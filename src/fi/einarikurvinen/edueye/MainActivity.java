@@ -34,6 +34,7 @@ import android.view.WindowManager;
 import android.view.SurfaceView;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -55,11 +56,11 @@ public class MainActivity extends Activity
     EduEyeServer webServer = null;
     private CameraView cameraView_;
     private OverlayView overlayView_;
-    private Button btnExit;
+    private ImageView btnExit;
     private TextView tvMessage1;
     private TextView tvMessage2;
     private TextView debug;
-    private Button readQR;
+    private ImageView readQR;
     
     private ProgressBar busy;
 
@@ -83,7 +84,7 @@ public class MainActivity extends Activity
     	
     	Log.d("CAMERA", "FRONT: " + frontCam + ", REAR: " + rearCam );
         
-        btnExit = (Button)findViewById(R.id.btn_exit);
+        btnExit = (ImageView)findViewById(R.id.btn_exit);
         btnExit.setOnClickListener(exitAction);
         tvMessage1 = (TextView)findViewById(R.id.tv_message1);
       
@@ -94,7 +95,7 @@ public class MainActivity extends Activity
         debug.setText("");
         busy = (ProgressBar)findViewById(R.id.busy);
 
-        readQR = (Button)findViewById(R.id.qrCode);
+        readQR = (ImageView)findViewById(R.id.qrCode);
         readQR.setEnabled(false);
         
         for(int i = 0; i < maxVideoNumber; i++) {
