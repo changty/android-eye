@@ -144,7 +144,7 @@ var Painter =  {
 		Painter.mode = 'eraser';
 		Painter.fillColor = 'rgba(0,0,0,1.0)';
 		Painter.ctx.globalCompositeOperation = 'destination-out';
-		Painter.radius = 30;
+		Painter.radius = 60;
 
 		$('.selectable').removeClass('active');
 		$('#eraser').addClass('active');
@@ -155,7 +155,7 @@ var Painter =  {
 		Painter.mode = 'highlighter';
 		Painter.fillColor = 'rgba(255,255, 0, 0.5)';
 		Painter.ctx.globalCompositeOperation =  'destination-atop';
-		Painter.radius = 10;
+		Painter.radius = 20;
 		$('.selectable').removeClass('active');
 		$('#highlighter').addClass('active');
 	},
@@ -190,7 +190,7 @@ var Painter =  {
 			if(Painter.mode == 'highlighter') {
 
 			    context.beginPath();
-			    context.arc(Painter.x, Painter.y, Painter.radius, 0, Math.PI*2, false);
+			    context.arc(Painter.x, Painter.y, Painter.radius/2, 0, Math.PI*2, false);
 			    context.fillStyle = Painter.fillColor;
 			    context.fill();
 			    context.strokeStyle = Painter.fillColor;
@@ -201,7 +201,7 @@ var Painter =  {
 			else if(Painter.mode == 'eraser') {
 			    
 			    context.beginPath();
-			    context.arc(Painter.x, Painter.y, Painter.radius, 0, Math.PI*2, false);
+			    context.arc(Painter.x, Painter.y, Painter.radius/2, 0, Math.PI*2, false);
 			    context.fillStyle = 'rgba(255,255,255,0)';
 			    context.fill();
 			    context.lineWidth = 2;
@@ -292,42 +292,3 @@ var Painter =  {
 
 	
 };
-
-
-
-
-
-
-/** old solution for crop resize 
-
-
-
-		//Drawing and started on top of the square
-		if(Painter.canvas.isDrawing && Painter.canvas.onCrop  && Painter.mode == 'hand') {
-
-			//Left top  x0,y0
-			//width 	x1 - x0
-			//height	y1 - y0
-
-			//change in width = w + (x2 - x)
-			//change in height = h + (y1 - y)
-
-			// This solutions works the worng way (althoug it works)
-			//var recW = (Painter.x1 - Painter.x0) + (Painter.x2 - Painter.x); 
-			//var recH = (Painter.y1 - Painter.y0) + (Painter.y2 - Painter.y);
-
-			var recW = (Painter.x1 - Painter.x0) + (Painter.x - Painter.x2); 
-			var recH = (Painter.y1 - Painter.y0) + (Painter.y - Painter.y2);
-			
-			//var recW = Painter.x - Painter.x0; 
-			//var recH = Painter.y - Painter.y0;
-			context.beginPath();
-		    context.rect(Painter.x0, Painter.y0, recW, recH);
-		    context.fill();
-		    context.lineWidth = 8;
-		    context.strokeStyle = 'rgba(255,255,255,0.5)';
-		    context.stroke();
-
-		}
-
-*/
