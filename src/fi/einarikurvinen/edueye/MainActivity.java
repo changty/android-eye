@@ -62,6 +62,9 @@ public class MainActivity extends Activity
     private TextView debug;
     private ImageView readQR;
     
+    boolean frontCamera; 
+    boolean rearCamera;
+    
     private ProgressBar busy;
 
     @Override
@@ -76,14 +79,11 @@ public class MainActivity extends Activity
 
         
     	PackageManager pm = getPackageManager();
-    	boolean frontCam, rearCam;
-
+    
     	//Must have a targetSdk >= 9 defined in the AndroidManifest
-    	frontCam = pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT);
-    	rearCam = pm.hasSystemFeature(PackageManager.FEATURE_CAMERA);
-    	
-    	Log.d("CAMERA", "FRONT: " + frontCam + ", REAR: " + rearCam );
-        
+    	frontCamera = pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT);
+    	rearCamera = pm.hasSystemFeature(PackageManager.FEATURE_CAMERA);
+    	        
         btnExit = (ImageView)findViewById(R.id.btn_exit);
         btnExit.setOnClickListener(exitAction);
         tvMessage1 = (TextView)findViewById(R.id.tv_message1);
@@ -105,20 +105,21 @@ public class MainActivity extends Activity
         //Start camera anyway
         //This will also start the webserver.
         initCamera();
+
         
         //Check that WLAN is in use and connected
         ConnectivityManager connManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
         
         
-        if(mWifi.isConnected()) {
+        if(mWifi.isConnected() && (frontCamera || rearCamera)) {
         	tvMessage1.setText(R.string.connect_to_pc);
             readQR.setEnabled(true); 
         }
         
         // If there is no connection, we'll establish one and wait it to connect.
         // After connection, we'll just move forward
-        else {
+        else if(frontCamera || rearCamera){
         	tvMessage1.setText(R.string.connecting_to_wlan);
         	toggleBusy();
         	
@@ -145,6 +146,10 @@ public class MainActivity extends Activity
                 	tvMessage1.setText(R.string.connect_to_pc);
                     readQR.setEnabled(true);            }
             });
+        }
+        
+        else {
+        	tvMessage1.setText(R.string.no_camera);
         }
     }
     
@@ -282,7 +287,9 @@ public class MainActivity extends Activity
 	}
 
     private void initCamera() {
-    	
+    	Toast error = Toast.makeText(this, R.string.no_camera, Toast.LENGTH_LONG);
+
+    	if(frontCamera || rearCamera) {
     	// detect camera here!
     	
         SurfaceView cameraSurface = (SurfaceView)findViewById(R.id.surface_camera);
@@ -292,6 +299,10 @@ public class MainActivity extends Activity
         overlayView_ = (OverlayView)findViewById(R.id.surface_overlay);
         overlayView_.setOnTouchListener(this);
         overlayView_.setUpdateDoneCallback(this);
+    	}
+    	else {
+        	error.show();
+    	}
     }
     
     public String getLocalIpAddress() {

@@ -13,4 +13,5 @@
     <string name="connect_to_pc">Connect to PC with QR-code</string>
     <string name="connecting_to_wlan">Connecting to wlan</string>
     <string name="qrdescr">Scan QR-code -button</string>
+    <string name="no_camera">No camera detected!</string>
 </resources>
