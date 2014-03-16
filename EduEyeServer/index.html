@@ -77,7 +77,14 @@
               
 
         <div class="live_image_box" id="video_plane">
-            <img id="live_image" src="res/blank.png">
+
+            <span id="errorImage" class="fa-stack fa-5x">
+              <i class="fa fa-camera fa-stack-1x"></i>
+              <i class="fa fa-ban fa-stack-2x text-danger"></i>
+            </span>
+
+
+            <img id="live_image" src="">
         </div>
 
 
@@ -547,10 +554,12 @@ $('.selectable').click(function(e) {
 
         window.onresize = function(event) {
             alignMiddle($('#item'));
-
+            alignMiddle($('#errorImage'));
             //scale no-connection image
             $('#live_image').width($(window).width());
             $('#live_image').height($(window).height());
+
+//            $('#errorImage').
 
             //make it fullscreen!
             Painter.canvas.width = $(window).width();

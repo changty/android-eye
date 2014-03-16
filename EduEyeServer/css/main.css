@@ -390,12 +390,14 @@ p {
 .btn-green.active {
 	top: 2px;
 	box-shadow: 0 1px 1px rgba(10,138,64, 0.8);
+	color: rgba(20,20,20, 0.4) !important;
 
 }
 
 .btn-blue.active {
 	top: 2px;
 	box-shadow: 0px 1px 2px rgba(34,111,190,0.8);
+	color: rgba(20,20,20, 0.4) !important;
 }
 
 /*Green button */
@@ -486,4 +488,10 @@ a.osbtn, a.osbtn:active, a.osbtn:visited  {
     -webkit-transition: all 0.3s;
 	-moz-transition: all 0.3s;
 	transition: all 0.3s;
+}
+
+#errorImage {
+	position: absolute;
+	left:0;
+	top:0;
 }
