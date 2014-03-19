@@ -153,7 +153,8 @@ var currentSize = new CameraSize();
 //////////////////////////////////////////////
 // Global function define
 //////////////////////////////////////////////
-var onImageLoadOK = function() {
+var onImageLoadOK = function(loaded, count, success) {
+    //console.log("params: ", loaded, count, success);
 
     var wid = $(window).width(); 
     var hei = $(window).height();
@@ -165,38 +166,47 @@ var onImageLoadOK = function() {
         setTimeout(refreshLive, REFRESH_RATE);  
 };
 
-var onImageLoadError = function() {
+var onImageLoadError = function(err) {
+    console.log("ERROR: ",  err);
 };
 
 var onQueryDone = function (ret) {
+    console.log("ret ", ret);
     getMaxZoom();
     $('#qr').addClass('hidden');
     $('#camera').removeClass('hidden');
     
     $("#resolution-choice").empty();
-    var resList = ret.split("|");
-    currentSize.width = resList[0].split("x")[0];
-    currentSize.height = resList[0].split("x")[1];
-    var currentSelect = -1;
-    for(var i = 1; i < resList.length; i++) {
-        var res = resList[i].split("x");
-        var newRes = new CameraSize();
-        newRes.width = res[0];
-        newRes.height = res[1];    
-        supportedSize.push(newRes);
-        if ( newRes.width == currentSize.width  && newRes.height == currentSize.height) {
-            currentSelect = i;
-            var newOption = "<option value='" + (i-1) + "'>" + resList[i] + "</option>";
-            $("#resolution-choice").append(newOption);
+
+    //IOS devices will be available only in fixed resolutions.
+    //This is a quick fix to test things.
+
+    //TODO: implement else for ios-devices
+    if(ret !== 'ios' ) {
+        var resList = ret.split("|");
+        currentSize.width = resList[0].split("x")[0];
+        currentSize.height = resList[0].split("x")[1];
+        var currentSelect = -1;
+        for(var i = 1; i < resList.length; i++) {
+            var res = resList[i].split("x");
+            var newRes = new CameraSize();
+            newRes.width = res[0];
+            newRes.height = res[1];    
+            supportedSize.push(newRes);
+            if ( newRes.width == currentSize.width  && newRes.height == currentSize.height) {
+                currentSelect = i;
+                var newOption = "<option value='" + (i-1) + "'>" + resList[i] + "</option>";
+                $("#resolution-choice").append(newOption);
+            }
         }
-    }
-    for(var i = 1; i < resList.length; i++) {
-        if ( currentSelect != i) {
-            var newOption = "<option value='" + (i-1) + "'>" + resList[i] + "</option>";
-            $("#resolution-choice").append(newOption);
+        for(var i = 1; i < resList.length; i++) {
+            if ( currentSelect != i) {
+                var newOption = "<option value='" + (i-1) + "'>" + resList[i] + "</option>";
+                $("#resolution-choice").append(newOption);
+            }
         }
+        $("#resolution-choice").bind("change", doChangeRes);  
     }
-    $("#resolution-choice").bind("change", doChangeRes);  
 
     // Trigger resolution changes (setup)
     // and start streaming
@@ -228,7 +238,10 @@ var playClick = function () {
 
 var onSetupOK = function() {
     var targetIndex = $("#resolution-choice").val();
-    currentSize = supportedSize[targetIndex]; 
+    
+    if(supportedSize[targetIndex]) {
+         currentSize = supportedSize[targetIndex];
+    } 
 
     // If not already playing, start!
     if(!inStreaming) {
@@ -238,9 +251,15 @@ var onSetupOK = function() {
 };
 
 var doChangeRes = function () {
+    console.log("do change res");
     var targetIndex = $("#resolution-choice").val();
-    var wid = supportedSize[targetIndex].width;
-    var hei = supportedSize[targetIndex].height; 
+    if(supportedSize[targetIndex]) {
+        var wid = supportedSize[targetIndex].width;
+        var hei = supportedSize[targetIndex].height; 
+    }else {
+        var wid = '0';
+        var hei = '0';
+    }
     $.ajax({
         type: "GET",
         url: basicURL + "cgi/setup",
@@ -429,6 +448,7 @@ $('#hand').click(function(e) {
  // Helper functions
 //////////////////////////////////////////////
     $('#showQR').click(function(e) {
+        inStreaming=false;
         showQRCodeHideCamera();
     });
     function showQRCodeHideCamera() {
