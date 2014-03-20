@@ -21,7 +21,7 @@
         <div id="item">
             <canvas id="qrcode"></canvas>
             <p>Read the QR-code with your mobile device</p>
-
+            <div id="loading" class="hidden"><i class="fa fa-spinner fa-spin"></i></div>
             <a href="#" id="showManualInput" class="small">Not working? Try manually</a>
 
             <div class="clearfix"></div>
@@ -143,6 +143,8 @@ var REFRESH_RATE = 300; //in ms
 var maxZoom = 0;
 var zoom = 0;
 
+var TRIES = 0;
+
 function CameraSize () {
     this.width = 0;
     this.height = 0;
@@ -153,9 +155,8 @@ var currentSize = new CameraSize();
 //////////////////////////////////////////////
 // Global function define
 //////////////////////////////////////////////
-var onImageLoadOK = function(loaded, count, success) {
-    //console.log("params: ", loaded, count, success);
-
+var onImageLoadOK = function() {
+    console.log("load");
     var wid = $(window).width(); 
     var hei = $(window).height();
 
@@ -171,7 +172,8 @@ var onImageLoadError = function(err) {
 };
 
 var onQueryDone = function (ret) {
-    console.log("ret ", ret);
+    
+    $('#loading').addClass('hidden');
     getMaxZoom();
     $('#qr').addClass('hidden');
     $('#camera').removeClass('hidden');
@@ -215,6 +217,12 @@ var onQueryDone = function (ret) {
 
 var onHttpError = function (err) {
     console.log("Error: ", err);
+    if(TRIES < 15) {
+        initConnection();
+    }
+    else {
+        connectionFailed();
+    }
 };
 
 var refreshLive = function() {
@@ -418,6 +426,14 @@ $('#hand').click(function(e) {
 
         $("#btn_play").bind("click", playClick);
         
+        TRIES = 0; 
+        initConnection();
+        $('#loading').removeClass('hidden');
+
+    });
+
+    var initConnection = function() {
+        TRIES++;
         setTimeout(function() {
             $.ajax({
                 type: "GET",
@@ -427,11 +443,12 @@ $('#hand').click(function(e) {
                 success: onQueryDone
             });
 
-        }, 2000);
+        }, 200);
+    };
 
-
-
-    });
+    var connectionFailed = function() {
+        $('#loading').addClass('hidden');
+    }
 
     server.on('listening', function() {
         var address = server.address(); 

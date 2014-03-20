@@ -111,7 +111,7 @@ public class MainActivity extends Activity
         ConnectivityManager connManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
         
-        
+        //Check that we have a wifi connection AND we have atleast one camera.
         if(mWifi.isConnected() && (frontCamera || rearCamera)) {
         	tvMessage1.setText(R.string.connect_to_pc);
             readQR.setEnabled(true); 
@@ -206,11 +206,6 @@ public class MainActivity extends Activity
         
         cameraView_.StopPreview(); 
         cameraView_.Release();
-
-        
-		//This fixes all camera issues (frees camera for barcode scanner)
-		//Moved from intent to here - let's see if it fixes issues
-        //cameraView_.Release();
     }  
 
     @Override
@@ -408,7 +403,7 @@ public class MainActivity extends Activity
         public String run(Properties parms) {
             int wid = Integer.parseInt(parms.getProperty("wid")); 
             int hei = Integer.parseInt(parms.getProperty("hei"));
-            Log.d("CHGT", ">>>>>>>run in doSetup wid = " + wid + " hei=" + hei);
+            //Log.d("CHGT", ">>>>>>>run in doSetup wid = " + wid + " hei=" + hei);
             cameraView_.StopPreview();
             cameraView_.setupCamera(wid, hei, previewCb_);
             cameraView_.StartPreview();
@@ -450,7 +445,7 @@ public class MainActivity extends Activity
             boolean ret;
             inProcessing = true;
             try{// 30 here is the image quality. Should it be raised later on?
-                ret = newImage.compressToJpeg( new Rect(0,0,picWidth,picHeight), 90, targetFrame);
+                ret = newImage.compressToJpeg( new Rect(0,0,picWidth,picHeight), 60, targetFrame);
             } catch (Exception ex) {
                 ret = false;    
             } 
