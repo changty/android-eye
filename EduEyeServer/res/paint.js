@@ -3,6 +3,7 @@
 var Painter =  {
 	radius:  10,
 	fillColor: 'rgba(255,255,255,0.1',
+	brushColor: {r: 255, g: 0, b: 255, a: 128},
 	mode: 'highlighter',
 	doCrop: false,
 	onCrop : false,
@@ -18,7 +19,7 @@ var Painter =  {
 		Painter.crop.ctx = Painter.crop.getContext('2d');
 
 		Painter.compositeOperation = Painter.ctx.globalCompositeOperation;
-
+		console.log(Painter.ctx.globalCompositeOperation)
 		//make it fullscreen!
 		Painter.canvas.width = $(window).width();
 		Painter.canvas.height = $(window).height();
@@ -28,51 +29,84 @@ var Painter =  {
 		Painter.crop.height = $(window).height();
 
 		//add event listeners
-		Painter.canvas.addEventListener('mousedown', Painter.onmousedown, false); 
-		Painter.canvas.addEventListener('mouseup', Painter.onmouseup, false); 
-		Painter.canvas.addEventListener('mousemove', Painter.onmousemove, false); 
+		Painter.canvas.addEventListener('mousedown', Painter.onmousedown, true); 
+		Painter.canvas.addEventListener('mouseup', Painter.onmouseup, true); 
+		Painter.canvas.addEventListener('mousemove', Painter.onmousemove, true); 
 
 		//Painter.mousePointer.addEventListener('mousemove', Painter.movepointer, false);
 
 		Painter.animate();
 	 },
 
-	fillCircle: function(x, y, radius, fillColor) {
-		var ctx = Painter.ctx;
-		//ctx.fillStyle = fillColor;
-		ctx.lineTo(x, y);
-        ctx.stroke();
-		//ctx.arc(x, y, radius, 0, Math.PI*2, false);
-		//ctx.fill();
+	fillCircle: function(ctx, x0, y0) {
+		if (Painter.mode === "highlighter" || Painter.mode === "eraser") {
+			var px = ctx.createImageData(1, 1);
+			var size = Painter.radius;
+			
+			px.data[0] = Painter.brushColor.r;
+			px.data[1] = Painter.brushColor.g;
+			px.data[2] = Painter.brushColor.b;
+			px.data[3] = Painter.brushColor.a;
+			
+			
+			var dist = Math.sqrt(Math.pow(x0 - Painter.oldX, 2) + Math.pow(y0 - Painter.oldY, 2));
+			var dx = dist === 0 ? 0 : (x0 - Painter.oldX) / dist;
+			var dy = dist === 0 ? 0 : (y0 - Painter.oldY) / dist;
+			
+			// Draw everything.
+			for (var i = 0; i <= dist; i+=size/2) {
+				var x1 = i * dx + Painter.oldX;
+				var y1 = i * dy + Painter.oldY;
+				
+				for (var y = y1 - size; y < y1 + size; ++y) {
+					for (var x = x1 - size; x < x1 + size; ++x) {
+						if (Math.pow(x-x1, 2) + Math.pow(y-y1, 2) < size*size) {
+							ctx.putImageData(px, x, y);
+						}
+					}
+				}
+			}
+
+			Painter.oldX = x0;
+			Painter.oldY = y0;
+		}
 	},
 
 	//bind mouse events
 	onmousemove: function(e) {
-
+		e.preventDefault();
+		e.stopPropagation();
+		
 		Painter.x = e.pageX;
 		Painter.y = e.pageY;
 		
-		if(!Painter.canvas.isDrawing) {
-			return; 
-		}
-
-		if(Painter.mode !='hand') {
+		Painter.drawPointer();
+		
+		if(Painter.mode !=='hand' && Painter.canvas.isDrawing) {
 			var x = e.pageX - this.offsetLeft;
 			var y = e.pageY - this.offsetTop;
-			Painter.fillCircle(x, y, Painter.radius, Painter.fillColor);
+			Painter.fillCircle(Painter.ctx, x, y);
 		}
+		
+		// Flush once everything is done.
+		//requestAnimationFrame(function() {});
+		
+		Painter.oldX = e.pageX;
+		Painter.oldY = e.pageY;
 	},
 
 	onmousedown: function(e) {
+		e.preventDefault();
+		e.stopPropagation();
 		
-		if(e.button == 2) { 
+		if (e.button === 2) { 
 			Painter.oldMode = Painter.mode;
 			Painter.setEraser();
 		}
-		else if(Painter.mode=='highlighter'){
+		else if (Painter.mode === 'highlighter'){
 			Painter.setHighlighter();
 		}
-		else if(Painter.mode == 'hand') {
+		else if (Painter.mode === 'hand') {
 			Painter.setHand();
 		}
 
@@ -96,22 +130,26 @@ var Painter =  {
 			}
 		}
 
-
-
 		Painter.canvas.isDrawing = true;
+		/*
 		var ctx = Painter.ctx;
 		ctx.strokeStyle = Painter.fillColor;
         ctx.lineWidth = Painter.radius;
         ctx.lineCap = 'round';
      	ctx.beginPath(); 
      	ctx.moveTo(e.pageX, e.pageY);
-    	 
-
-
+		*/
+		Painter.oldX = e.pageX;
+		Painter.oldY = e.pageY;
+		
+		Painter.fillCircle(Painter.ctx, Painter.oldX, Painter.oldY);
+		//requestAnimationFrame(function() {});
 	},
 
 	onmouseup: function(e) {
-
+		e.preventDefault();
+		e.stopPropagation();
+		
 		if(Painter.doCrop && Painter.mode == 'hand' && !Painter.onCrop) {
 			Painter.x1 = e.pageX; 
 			Painter.y1 = e.pageY;
@@ -119,7 +157,7 @@ var Painter =  {
 
 
 		//set back highlighter (or any other tool)
-		if(Painter.oldMode) {
+		if (Painter.oldMode) {
 			$('.selectable').removeClass('active');
 			Painter.mode = Painter.oldMode;
 			if(Painter.mode === 'highlighter') {
@@ -135,6 +173,7 @@ var Painter =  {
 
 	},
 
+	// Called by an UI button.
 	clearCanvas: function() {
 		//Clear canvas
 		Painter.ctx.clearRect(0, 0, Painter.canvas.width, Painter.canvas.height);
@@ -142,9 +181,9 @@ var Painter =  {
 
 	setEraser: function() {
 		Painter.mode = 'eraser';
+		Painter.brushColor = {r: 0, g: 0, b: 0, a:0};
 		Painter.fillColor = 'rgba(0,0,0,1.0)';
-		Painter.ctx.globalCompositeOperation = 'destination-out';
-		Painter.radius = 60;
+		Painter.radius = 30;
 
 		$('.selectable').removeClass('active');
 		$('#eraser').addClass('active');
@@ -153,9 +192,9 @@ var Painter =  {
 
 	setHighlighter : function() {
 		Painter.mode = 'highlighter';
+		Painter.brushColor = {r: 255, g: 255, b: 0, a: 128};
 		Painter.fillColor = 'rgba(255,255, 0, 0.5)';
-		Painter.ctx.globalCompositeOperation =  'destination-atop';
-		Painter.radius = 20;
+		Painter.radius = 10;
 		$('.selectable').removeClass('active');
 		$('#highlighter').addClass('active');
 	},
@@ -167,53 +206,74 @@ var Painter =  {
 	},
 
 	animate: function() {
-		requestAnimationFrame(Painter.animate);
-		Painter.mousePointer.ctx.clearRect(0, 0, Painter.mousePointer.width, Painter.mousePointer.height);
-		Painter.crop.ctx.clearRect(0, 0, Painter.crop.width, Painter.crop.height);
-
-		Painter.drawPointer();	
+		
+		//Painter.mousePointer.ctx.clearRect(0, 0, Painter.mousePointer.width, Painter.mousePointer.height);
+			
 
 		if(Painter.doCrop) {
 			Painter.drawCrop();	
-		}	
+		}
 	},
 
 	drawPointer: function() {
-				//Painter.crop.ctx.clearRect(0, 0, Painter.crop.width, Painter.crop.height);
-
-		if($('#controls').is(':hover')) {
-			Painter.mousePointer.ctx.clearRect(0, 0, Painter.mousePointer.width, Painter.mousePointer.height);
-		}
-
-		else {
-			var context = Painter.mousePointer.ctx;
+		
+		var oldX = Painter.oldX;
+		var oldY = Painter.oldY;
+		
+		// Remove the old pointer
+		var context = Painter.mousePointer.ctx;
+		var temp = Painter.brushColor.a;
+		Painter.brushColor.a = 0;
+		Painter.fillCircle(context, Painter.oldX, Painter.oldY);
+		Painter.brushColor.a = temp;
+		
+		Painter.oldX = Painter.x;
+		Painter.oldY = Painter.y;
+		
+		if(!$('#controls').is(':hover')) {
 			if(Painter.mode == 'highlighter') {
-
-			    context.beginPath();
-			    context.arc(Painter.x, Painter.y, Painter.radius/2, 0, Math.PI*2, false);
-			    context.fillStyle = Painter.fillColor;
-			    context.fill();
-			    context.strokeStyle = Painter.fillColor;
-			    context.stroke();
+				
+				Painter.fillCircle(context, Painter.x, Painter.y);
+				
+			    //context.beginPath();
+			    //context.arc(Painter.x, Painter.y, Painter.radius, 0, Math.PI*2, false);
+			    //context.fillStyle = Painter.fillColor;
+			    //context.fill();
+			    //context.strokeStyle = Painter.fillColor;
+			    //context.stroke();
 
 			}
 
 			else if(Painter.mode == 'eraser') {
 			    
-			    context.beginPath();
-			    context.arc(Painter.x, Painter.y, Painter.radius/2, 0, Math.PI*2, false);
-			    context.fillStyle = 'rgba(255,255,255,0)';
-			    context.fill();
-			    context.lineWidth = 2;
-			    context.strokeStyle = '#999';
-			    context.stroke();
+				var temp = $(true, Painter.brushColor);
+				Painter.brushColor = {r: 200, g: 200, b: 200, a: 255};
+				Painter.fillCircle(context, Painter.x, Painter.y);
+				Painter.radius -= 2;
+				Painter.brushColor = {r: 200, g: 200, b: 200, a: 0};
+				Painter.fillCircle(context, Painter.x, Painter.y);
+				Painter.radius += 2;
+				Painter.brushColor = temp;
+				
+			    //context.beginPath();
+			    //context.arc(Painter.x, Painter.y, Painter.radius, 0, Math.PI*2, false);
+			    //context.fillStyle = 'rgba(255,255,255,0)';
+			    //context.fill();
+			    //context.lineWidth = 2;
+			    //context.strokeStyle = '#999';
+			    //context.stroke();
 
 			}
 		}
+		
+		Painter.oldX = oldX;
+		Painter.oldY = oldY;
 	}, 
 
 	drawCrop: function() {
 		var context = Painter.crop.ctx;
+		context.clearRect(0, 0, Painter.crop.width, Painter.crop.height);
+
 
 		//Painter.crop.ctx.beginPath();
 		Painter.crop.ctx.fillStyle = '#222';
