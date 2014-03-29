@@ -34,7 +34,9 @@ import android.view.WindowManager;
 import android.view.SurfaceView;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -56,11 +58,14 @@ public class MainActivity extends Activity
     EduEyeServer webServer = null;
     private CameraView cameraView_;
     private OverlayView overlayView_;
-    private ImageView btnExit;
+    private ImageView btn ;
     private TextView tvMessage1;
     private TextView tvMessage2;
     private TextView debug;
     private ImageView readQR;
+    private Button closeInfo;
+    private LinearLayout info;
+    private FrameLayout defaultView; 
     
     boolean frontCamera; 
     boolean rearCamera;
@@ -84,9 +89,13 @@ public class MainActivity extends Activity
     	frontCamera = pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT);
     	rearCamera = pm.hasSystemFeature(PackageManager.FEATURE_CAMERA);
     	        
-        btnExit = (ImageView)findViewById(R.id.btn_exit);
-        btnExit.setOnClickListener(exitAction);
-        tvMessage1 = (TextView)findViewById(R.id.tv_message1);
+       // btnExit = (ImageView)findViewById(R.id.btn_exit);
+       // btnExit.setOnClickListener(exitAction);
+    	closeInfo  = (Button)findViewById(R.id.close_info);
+    	info = (LinearLayout)findViewById(R.id.info);
+    	defaultView = (FrameLayout)findViewById(R.id.default_view);
+    	
+    	tvMessage1 = (TextView)findViewById(R.id.tv_message1);
       
         //not in use atm.
         tvMessage2 = (TextView)findViewById(R.id.tv_message2);
@@ -210,7 +219,17 @@ public class MainActivity extends Activity
 
     @Override
     public void onBackPressed() {
-       super.onBackPressed();
+       //super.onBackPressed();
+       
+       if(defaultView.getVisibility() != View.VISIBLE) {
+    	  info.setVisibility(View.GONE);
+    	   defaultView.setVisibility(View.VISIBLE); 
+    	  
+       }
+       else {
+    	   super.onBackPressed();
+       }
+       
     }
 
     @Override 
@@ -239,6 +258,17 @@ public class MainActivity extends Activity
     		busy.setEnabled(true);
     		busy.setVisibility(View.VISIBLE);
     	}
+    }
+    
+    /*Close info view */
+    public void closeInfo(View view) {
+    	info.setVisibility(View.GONE);
+    	defaultView.setVisibility(View.VISIBLE);
+    }
+    
+    public void showInfo(View view) {
+    	defaultView.setVisibility(View.GONE);
+    	info.setVisibility(View.VISIBLE);
     }
     
     /* QR-Code stuff */
@@ -355,13 +385,13 @@ public class MainActivity extends Activity
     }
    
     //Exit action
-    private OnClickListener exitAction = new OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            onPause();
-            finish();
-        }   
-    };
+//    private OnClickListener exitAction = new OnClickListener() {
+//        @Override
+//        public void onClick(View v) {
+//            onPause();
+//            finish();
+//        }   
+//    };
    
     private PreviewCallback previewCb_ = new PreviewCallback() {
         public void onPreviewFrame(byte[] frame, Camera c) {

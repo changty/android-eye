@@ -14,4 +14,11 @@
     <string name="connecting_to_wlan">Connecting to wlan</string>
     <string name="qrdescr">Scan QR-code -button</string>
     <string name="no_camera">No camera detected!</string>
+
+    <string name="info_one">1. Download EduEye desktop client from www.edueye.net</string>
+    <string name="info_two">2. Launch EduEye desktop and scan the QR-code with EduEye mobile client</string>
+    <string name="back_button">Back</string>
+    <string name="help_button">\?</string>
+    
+
 </resources>

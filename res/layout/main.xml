@@ -13,47 +13,66 @@
         android:layout_height="fill_parent"
         android:background="#00000000" 
         android:id="@+id/surface_overlay"/>
+    
+	        <LinearLayout
+	            android:id="@+id/info"
+	            android:layout_width="fill_parent"
+	            android:layout_height="fill_parent"
+	            android:background="#3498DB"
+	            android:gravity="center"
+	            android:visibility="gone"
+	            android:orientation="vertical" >
 
-    <FrameLayout
-        android:layout_width="fill_parent" 
-        android:layout_height="fill_parent">
-     <!--   
-        <LinearLayout
-            android:id="@+id/layout_setup"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:gravity="center|bottom"
-            android:orientation="vertical" >
-            -->
+	            <TextView
+	                android:id="@+id/info_one"
+	                android:layout_width="fill_parent"
+	                android:layout_height="wrap_content"
+	                android:layout_marginLeft="15dip"
+	                android:layout_marginRight="15dip"
+	                android:layout_marginBottom="15dip"
+	                android:gravity="center"
+	                android:text="@string/info_one"
+	                android:textColor="#FFFFFFFF"
+	                android:textSize="18sp"
+	                android:shadowColor="#2980b9"
+	                android:shadowDx="0"
+	                android:shadowDy="1"
+	                android:shadowRadius="0.01"
+	                android:visibility="visible" />
 
-            <LinearLayout
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                android:background="#aa4593e3"
-                android:gravity="center"
-                android:orientation="vertical" >
+	            <TextView
+	                android:id="@+id/info_two"
+	                android:layout_width="fill_parent"
+	                android:layout_height="wrap_content"
+	                android:layout_marginLeft="15dip"
+	                android:layout_marginRight="15dip"
+	                android:gravity="center"
+	                android:text="@string/info_two"
+	                android:textColor="#FFFFFFFF"
+	                android:textSize="18sp"
+	               	android:shadowColor="#2980b9"
+	    	        android:shadowDx="0"
+	                android:shadowDy="1"
+	                android:shadowRadius="0.01"
+	                android:visibility="visible" />
 
-                
-
-                <ProgressBar
-                    android:id="@+id/busy"
-                    style="?android:attr/progressBarStyleLarge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:indeterminateOnly="true"
-                    android:keepScreenOn="true"
-                    android:visibility="invisible" />
-
-                <TextView
-                    android:id="@+id/tv_message1"
-                    android:layout_width="fill_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="5dip"
-                    android:layout_marginRight="5dip"
-                    android:gravity="center"
-                    android:text="@string/connect_to_pc"
-                    android:textColor="#FFFFFFFF"
-                    android:textSize="24sp" />
+	            <Button
+	                android:id="@+id/close_info"
+	                android:layout_width="wrap_content"
+	                android:layout_height="wrap_content"
+	                android:layout_marginTop="55dip"
+	                android:onClick="closeInfo"
+	                android:text="@string/back_button" />
+            
+			</LinearLayout> <!--  info -->
+			
+	    <FrameLayout
+	        android:id="@+id/default_view"
+	        android:layout_width="fill_parent" 
+	        android:layout_height="fill_parent"
+	       	android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="visible">
 
                 <TextView
                     android:id="@+id/tv_message2"
@@ -66,33 +85,62 @@
                     android:textSize="24sp"
                     android:visibility="gone" />
 
+                <!--  so called debug view -->
                 <TextView
                     android:id="@+id/hello1"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="100dp"
+                    android:layout_gravity="center"
+                    android:gravity="center"
                     android:text="" />
 
                 <ImageView
                     android:id="@+id/qrCode"
                     android:layout_width="match_parent"
                     android:layout_height="146dp"
+                    android:layout_gravity="center"
                     android:onClick="readQRCode"
                     android:src="@drawable/qrbtn"
-                    android:text="@string/read_qr_code" />
+                    android:contentDescription="@string/read_qr_code"
+                    android:text="@string/read_qr_code"  />
 
-                <ImageView
-                    android:id="@+id/btn_exit"
-                    android:layout_width="63dp"
-                    android:layout_height="115dp"
-                    android:layout_margin="8dip"
-                    android:gravity="center_vertical|center_horizontal|bottom"
-                    android:src="@drawable/exitbtn"
-                    android:text="@string/action_exit"
-                    android:textSize="24sp"
-                    android:textStyle="normal" />
+                <Button
+                    android:id="@+id/help"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:onClick="showInfo"
+                    android:layout_gravity="bottom|right"
+                    android:text="@string/help_button" />
 
-            </LinearLayout>
+	
+        <!--     </LinearLayout> -->
       <!-- </LinearLayout> -->
+
+                <TextView
+                    android:id="@+id/tv_message1"
+                    android:layout_width="fill_parent"
+                    android:layout_height="120dp"
+                    android:layout_marginLeft="5dip"
+                    android:layout_marginRight="5dip"
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:layout_marginTop="130dp"
+                    android:text="@string/connect_to_pc"
+                    android:textColor="#FFFFFFFF"
+                    android:textSize="24sp" />
+
+                <ProgressBar
+                    android:id="@+id/busy"
+                    style="?android:attr/progressBarStyleLarge"
+                    android:layout_width="match_parent"
+                    android:layout_height="134dp"
+                    android:layout_gravity="center"
+                    android:layout_marginBottom="140dp"
+                    android:indeterminateOnly="true"
+                    android:keepScreenOn="true"
+                    android:visibility="gone" />
 
     </FrameLayout>
    
