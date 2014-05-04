@@ -34,8 +34,6 @@ var Painter =  {
 		Painter.canvas.addEventListener('mousemove', Painter.onmousemove, true); 
 
 		//Painter.mousePointer.addEventListener('mousemove', Painter.movepointer, false);
-
-		Painter.animate();
 	 },
 
 	fillCircle: function(ctx, x0, y0) {
@@ -88,8 +86,10 @@ var Painter =  {
 			Painter.fillCircle(Painter.ctx, x, y);
 		}
 		
-		// Flush once everything is done.
-		//requestAnimationFrame(function() {});
+
+		if(Painter.doCrop) {
+			Painter.drawCrop();	
+		}
 		
 		Painter.oldX = e.pageX;
 		Painter.oldY = e.pageY;
@@ -160,6 +160,7 @@ var Painter =  {
 		if (Painter.oldMode) {
 			$('.selectable').removeClass('active');
 			Painter.mode = Painter.oldMode;
+
 			if(Painter.mode === 'highlighter') {
 				Painter.setHighlighter();
 			}
@@ -184,13 +185,14 @@ var Painter =  {
 		Painter.brushColor = {r: 0, g: 0, b: 0, a:0};
 		Painter.fillColor = 'rgba(0,0,0,1.0)';
 		Painter.radius = 30;
-
 		$('.selectable').removeClass('active');
 		$('#eraser').addClass('active');
 
 	},
 
 	setHighlighter : function() {
+
+		Painter.removePointer();
 		Painter.mode = 'highlighter';
 		Painter.brushColor = {r: 255, g: 255, b: 0, a: 128};
 		Painter.fillColor = 'rgba(255,255, 0, 0.5)';
@@ -200,32 +202,26 @@ var Painter =  {
 	},
 
 	setHand: function() {
+		Painter.removePointer();
 		Painter.mode = 'hand';
 		$('.selectable').removeClass('active');
 		$('#hand').addClass('active');
 	},
 
-	animate: function() {
-		
-		//Painter.mousePointer.ctx.clearRect(0, 0, Painter.mousePointer.width, Painter.mousePointer.height);
-			
-
-		if(Painter.doCrop) {
-			Painter.drawCrop();	
-		}
-	},
-
 	drawPointer: function() {
-		
+		Painter.removePointer();
 		var oldX = Painter.oldX;
 		var oldY = Painter.oldY;
 		
 		// Remove the old pointer
 		var context = Painter.mousePointer.ctx;
 		var temp = Painter.brushColor.a;
+		Painter.radius += 2;
 		Painter.brushColor.a = 0;
 		Painter.fillCircle(context, Painter.oldX, Painter.oldY);
 		Painter.brushColor.a = temp;
+		Painter.radius -= 2;
+
 		
 		Painter.oldX = Painter.x;
 		Painter.oldY = Painter.y;
@@ -348,7 +344,22 @@ var Painter =  {
 		Painter.crop.ctx.clearRect(Painter.x0, Painter.y0, recW, recH);
 
 
+	},
+
+	removePointer: function() {
+			// Remove the eraser on mouse up.
+			var context = Painter.mousePointer.ctx;
+			context.clearRect(0, 0, Painter.mousePointer.width, Painter.mousePointer.height);
+
+			// var temp = Painter.brushColor.a;
+			// Painter.radius += 2;
+			// Painter.brushColor.a = 0;
+			// Painter.fillCircle(context, Painter.oldX, Painter.oldY);
+			// Painter.brushColor.a = temp;
+			// Painter.radius -= 2;
 	}
+
+
 
 	
 };

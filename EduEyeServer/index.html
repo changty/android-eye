@@ -17,7 +17,7 @@
     <div id="exit"><i class="fa fa-times"></i></div>
 
     <!-- QR-Code view -->
-    <div id="qr" class="page hidden">
+    <div id="qr" class="page">
         <div id="item">
             <canvas id="qrcode"></canvas>
             <p>Read the QR-code with your mobile device</p>
@@ -73,7 +73,7 @@
 
 
     <!-- Camera View -->
-    <div id="camera" class="page ">
+    <div id="camera" class="page hidden">
               
 
         <div class="live_image_box" id="video_plane">
@@ -96,10 +96,9 @@
             <button id="showQR"  class="pull-left  btn btn-2 btn-2c"><i class="fa fa-chevron-left"></i></button>
 
 
-            <span class="custom-dropdown custom-dropdown--emerald custom-dropdown--large">
+            <span id="resolution-choice-wrapper" class="custom-dropdown custom-dropdown--emerald custom-dropdown--large">
                 <select name="resolution-choice" id="resolution-choice" class="custom-dropdown__select custom-dropdown__select--emerald">
-                    <option>Testi</option>
-                    <option>Lorem</option>
+                    <option>Loading...</option>
                 </select>
             </span>
 
@@ -156,7 +155,7 @@ var currentSize = new CameraSize();
 // Global function define
 //////////////////////////////////////////////
 var onImageLoadOK = function() {
-    console.log("load");
+    //console.log("load");
     var wid = $(window).width(); 
     var hei = $(window).height();
 
@@ -185,6 +184,14 @@ var onQueryDone = function (ret) {
 
     //TODO: implement else for ios-devices
     if(ret !== 'ios' ) {
+
+
+         $('#zoomIn').removeClass('hidden');  
+         $('#zoomOut').removeClass('hidden');  
+         $('#autoFocus').removeClass('hidden');  
+         $('#resolution-choice-wrapper').removeClass('hidden');  
+
+
         var resList = ret.split("|");
         currentSize.width = resList[0].split("x")[0];
         currentSize.height = resList[0].split("x")[1];
@@ -208,6 +215,16 @@ var onQueryDone = function (ret) {
             }
         }
         $("#resolution-choice").bind("change", doChangeRes);  
+    }
+
+    // With ios-devices hide all zoom, focus and res-change buttons.
+    else {
+
+         $('#zoomIn').addClass('hidden');  
+         $('#zoomOut').addClass('hidden');  
+         $('#autoFocus').addClass('hidden');  
+         $('#resolution-choice-wrapper').addClass('hidden');  
+
     }
 
     // Trigger resolution changes (setup)
@@ -259,7 +276,7 @@ var onSetupOK = function() {
 };
 
 var doChangeRes = function () {
-    console.log("do change res");
+    //console.log("do change res");
     var targetIndex = $("#resolution-choice").val();
     if(supportedSize[targetIndex]) {
         var wid = supportedSize[targetIndex].width;
@@ -367,15 +384,18 @@ $('#highlighter').click(function(e) {
 });
 
 $('#cropper').click(function(e) {
-    console.log(Painter.doCrop);
+    //console.log(Painter.doCrop);
     if(!Painter.doCrop) {
         $('#cropper').addClass('active');
         Painter.doCrop = true;
         Painter.setHand();
+        $('#crop').removeClass('hidden');
+
     }
     else {
         $('#cropper').removeClass('active');
         Painter.doCrop = false;
+        $('#crop').addClass('hidden');
     }
 });
 
@@ -410,11 +430,11 @@ $('#hand').click(function(e) {
 
     var server = dgram.createSocket('udp4'); 
     server.on('message', function (msg, rinfo) {
-        console.log('server got: ' + msg + ' from ' + rinfo.address + ':' + rinfo.port); 
+        //console.log('server got: ' + msg + ' from ' + rinfo.address + ':' + rinfo.port); 
         
         //Start showing images
         basicURL = "http://" + rinfo.address + ':' + WWWPORT + '/'; 
-        console.log("basicURL ", basicURL );
+        //console.log("basicURL ", basicURL );
 
         var screenHeight = $(window).height();
         var screenWidth = $(window).width();
@@ -452,7 +472,7 @@ $('#hand').click(function(e) {
 
     server.on('listening', function() {
         var address = server.address(); 
-        console.log('Server listening ' + address.address + ':' + address.port);
+        //console.log('Server listening ' + address.address + ':' + address.port);
     });
 
 
@@ -484,7 +504,7 @@ $('#hand').click(function(e) {
           ifaces[dev].forEach(function(details){
 
             if (details.family=='IPv4' && dev !='lo' && details.internal != true) {
-              console.log('Drawing IP: ' + dev+(alias?':'+alias:''),details.address + " " + details.internal);
+              //console.log('Drawing IP: ' + dev+(alias?':'+alias:''),details.address + " " + details.internal);
               //++alias;
               found = true;
               callback(details.address);
